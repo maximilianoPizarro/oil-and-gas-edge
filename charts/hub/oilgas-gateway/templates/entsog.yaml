@@ -1,0 +1,90 @@
+{{- if .Values.entsog.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.entsog.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: oilgas-gateway
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  type: ExternalName
+  externalName: {{ .Values.entsog.host }}
+  ports:
+    - name: https
+      port: 443
+      targetPort: 443
+---
+apiVersion: networking.istio.io/v1
+kind: ServiceEntry
+metadata:
+  name: {{ .Values.entsog.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: oilgas-gateway
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  hosts:
+    - {{ .Values.entsog.host }}
+  location: MESH_EXTERNAL
+  resolution: DNS
+  ports:
+    - number: 443
+      name: https
+      protocol: HTTPS
+---
+apiVersion: networking.istio.io/v1
+kind: DestinationRule
+metadata:
+  name: {{ .Values.entsog.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: oilgas-gateway
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  host: {{ .Values.entsog.host }}
+  trafficPolicy:
+    tls:
+      mode: SIMPLE
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ .Values.entsog.serviceName }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: oilgas-gateway
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Release.Namespace }}
+  hostnames:
+    - {{ .Values.gateway.hostname | quote }}
+  rules:
+    - matches:
+        - path:
+            type: PathPrefix
+            value: {{ .Values.entsog.pathPrefix }}
+      filters:
+        - type: URLRewrite
+          urlRewrite:
+            hostname: {{ .Values.entsog.host }}
+            path:
+              type: ReplacePrefixMatch
+              replacePrefixMatch: /
+      backendRefs:
+        - name: {{ .Values.entsog.serviceName }}
+          port: 443
+{{- end }}

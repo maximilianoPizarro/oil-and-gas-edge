@@ -443,6 +443,8 @@ oc get externalsecret -n oilgas-edge</code></pre>
       <code>oilgas-login</code> redirects the browser to <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code>
       and the callback is <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>. <code>curl</code> without
       that session does not return the Ignition UI.
+      <code>/entsog</code> is ENTSOG Transparency (<code>transparency.entsog.eu</code>): gas flows and nominations,
+      no upstream key, and the same OIDCPolicy as Ignition.
     </p>
   </section>
 

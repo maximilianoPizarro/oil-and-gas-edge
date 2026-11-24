@@ -22,3 +22,9 @@ oidc:
   enabled: true
   issuerURL: ""
   clientID: ignition-hmi
+
+entsog:
+  enabled: true
+  host: transparency.entsog.eu
+  pathPrefix: /entsog
+  serviceName: entsog
