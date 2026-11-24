@@ -1,0 +1,4 @@
+Realm {{ .Values.realm.name }} imported into Keycloak {{ .Values.keycloak.name }} ({{ .Values.keycloak.namespace }}).
+
+Client {{ .Values.realm.clientID }} redirects to https://{{ .Values.realm.host }}/.
+Create an operator user in this realm before opening the HMI.

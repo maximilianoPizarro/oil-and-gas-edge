@@ -1,0 +1,13 @@
+---
+global:
+  pattern: oil-and-gas-edge
+  options:
+    useCSV: false
+    syncPolicy: Automatic
+    installPlanApproval: Automatic
+
+main:
+  variant: hub
+  multiSourceConfig:
+    enabled: true
+    clusterGroupChartVersion: "0.9.*"

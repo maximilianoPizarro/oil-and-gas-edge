@@ -1,0 +1,25 @@
+{{- if .Values.ganService.enabled }}
+# Headless Services from the Ignition chart use clusterIP: None.
+# Field MicroShift sites need a regular ClusterIP (or LoadBalancer) to dial GAN 8060.
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.ganService.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: control-room
+    app.kubernetes.io/part-of: oil-and-gas-edge
+    app.kubernetes.io/component: gateway-network
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+spec:
+  type: ClusterIP
+  selector:
+    app.kubernetes.io/name: ignition
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  ports:
+    - name: gan
+      port: {{ .Values.ganService.port }}
+      targetPort: 8060
+      protocol: TCP
+{{- end }}

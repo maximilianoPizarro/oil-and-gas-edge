@@ -1,0 +1,10 @@
+Kafka cluster {{ .Values.cluster.name }} in {{ .Release.Namespace }}.
+
+Bootstrap: {{ .Values.cluster.name }}-kafka-bootstrap.{{ .Release.Namespace }}.svc:9092
+
+Topics:
+{{- range .Values.topics }}
+  - {{ . }}
+{{- end }}
+
+The listener is plaintext inside the cluster. This is a lab cluster, one KRaft node.

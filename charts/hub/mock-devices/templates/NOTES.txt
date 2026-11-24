@@ -1,0 +1,11 @@
+Mock devices registered against {{ .Values.ignition.url }}.
+
+Devices:
+{{- range .Values.devices }}
+  - {{ .name }}
+{{- end }}
+
+The Job reads X-Ignition-API-Token from secret {{ .Values.ignition.tokenSecret }}.
+That secret is projected from Vault key {{ .Values.vault.remoteKey }}.
+Create the token in the control-room Gateway after commissioning, then store it
+with the pattern secret ignition-api.

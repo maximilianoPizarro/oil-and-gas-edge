@@ -1,0 +1,71 @@
+{{- if .Values.kiosk.enabled }}
+apiVersion: kubevirt.io/v1
+kind: VirtualMachine
+metadata:
+  name: {{ .Values.kiosk.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: device-edge
+    app.kubernetes.io/part-of: oil-and-gas-edge
+    oilgas.validatedpatterns.io/role: kiosk
+  annotations:
+    description: Firefox kiosk for the control-room HMI. This VM does not run Ignition.
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  runStrategy: {{ .Values.vmDefaults.runStrategy }}
+  dataVolumeTemplates: []
+  template:
+    metadata:
+      labels:
+        kubevirt.io/domain: {{ .Values.kiosk.name }}
+        oilgas.validatedpatterns.io/role: kiosk
+    spec:
+      domain:
+        cpu:
+          cores: {{ .Values.kiosk.cpu }}
+          sockets: 1
+          threads: 1
+        resources:
+          requests:
+            memory: {{ .Values.kiosk.memory }}
+          limits:
+            memory: {{ .Values.kiosk.memory }}
+        devices:
+          disks:
+            - name: rootdisk
+              disk:
+                bus: virtio
+            - name: cloudinitdisk
+              disk:
+                bus: virtio
+          interfaces:
+            - name: default
+              masquerade: {}
+        machine:
+          type: q35
+        features:
+          acpi: {}
+          smm:
+            enabled: true
+        firmware:
+          bootloader:
+            efi:
+              secureBoot: false
+      networks:
+        - name: default
+          pod: {}
+      volumes:
+        - name: rootdisk
+          dataVolume:
+            name: {{ .Values.kiosk.name }}-rootdisk
+        - name: cloudinitdisk
+          cloudInitNoCloud:
+            secretRef:
+              name: {{ .Values.kiosk.name }}-cloudinit
+            networkData: |
+              version: 2
+              ethernets:
+                eth0:
+                  dhcp4: true
+{{- end }}

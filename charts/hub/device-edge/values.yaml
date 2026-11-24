@@ -1,0 +1,96 @@
+# Namespace that owns the HyperConverged CR (OpenShift Virtualization).
+# The Field Content template already installs HyperConverged. Leave this off
+# there. Set enabled true only on a cluster that does not have CNV yet.
+cnv:
+  enabled: false
+  namespace: openshift-cnv
+  # Mirrors the HyperConverged used by from-3scale-to-connectivity-link.
+  featureGates:
+    withHostPassthroughCPU: true
+    enableCommonBootImageImport: true
+    deployVmConsoleProxy: true
+
+# Control-room GAN endpoint reachable from the VMs (cluster DNS).
+controlRoom:
+  ganHost: control-room-gan.ignition.svc.cluster.local
+  ganPort: 8060
+  ganIssuerName: oilgas-gan-issuer
+  ganIssuerNamespace: ignition
+  ganIssuerSecretName: oilgas-gan-issuer
+
+# Client certificate projected by device-certs into this namespace.
+deviceCerts:
+  namespace: oilgas-edge
+
+# Ignition 8.3 configuration API used to register the site simulator.
+mockDevice:
+  apiCollection: com.inductiveautomation.opcua
+  apiResource: devices
+
+# RHEL guest image source for DataVolumes.
+# Prefer injecting a real Customer Portal / mirror URL via External Secrets.
+rhelImage:
+  # Example placeholder; replace before deploy.
+  url: ""
+  storageClassName: gp3-csi
+  # Generous disk for MicroShift + Ignition data volume.
+  size: 80Gi
+
+# Default VM sizing — footprint is not constrained on the RHDP virt template.
+vmDefaults:
+  cpu: 4
+  memory: 16Gi
+  # Extra blank disk for LVMS / MicroShift persistent storage.
+  dataDiskSize: 40Gi
+  cloudUserPassword: "oilgas"
+  runStrategy: Always
+
+# Field sites that dial into the control-room Gateway Network.
+sites:
+  - name: wellpad-north
+    displayName: Well Pad North
+    description: Upstream well-pad Device Edge site
+    program: |
+      0,wellhead-pressure,1450,Good
+      0,flow-rate,120,Good
+      0,tank-level,55,Good
+      5000,wellhead-pressure,1510,Good
+      5000,flow-rate,128,Good
+      5000,tank-level,57,Good
+  - name: compressor-station
+    displayName: Compressor Station
+    description: Midstream compression station Device Edge site
+    program: |
+      0,suction-pressure,280,Good
+      0,discharge-pressure,640,Good
+      0,vibration,0.4,Good
+      5000,suction-pressure,295,Good
+      5000,discharge-pressure,670,Good
+      5000,vibration,0.6,Good
+  - name: pipeline-segment
+    displayName: Pipeline Segment
+    description: Pipeline segment Device Edge site
+    program: |
+      0,line-pressure,720,Good
+      0,temperature,18,Good
+      0,leak-indicator,0,Good
+      5000,line-pressure,735,Good
+      5000,temperature,19,Good
+      5000,leak-indicator,0,Good
+
+# Firefox kiosk. It does not run Ignition.
+kiosk:
+  enabled: true
+  name: hmi-kiosk
+  cpu: 2
+  memory: 4Gi
+  diskSize: 40Gi
+  hmiUrl: https://ignition.apps.cluster.example.com
+
+# Ignition Edge chart settings applied inside each MicroShift guest.
+edgeIgnition:
+  chartRepo: https://charts.ia.io
+  chartName: ignition
+  chartVersion: 0.2.5
+  edition: edge
+  releaseName: ignition-edge

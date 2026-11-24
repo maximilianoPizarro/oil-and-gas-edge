@@ -1,0 +1,13 @@
+apiVersion: v2
+name: kafka
+description: >-
+  Single-node KRaft Kafka for oil and gas device events. The AMQ Streams
+  operator subscription lives in values-hub. This chart only declares the
+  cluster, the four device topics, and a ServiceMonitor for the JMX exporter.
+type: application
+version: 0.1.0
+appVersion: "3.9.0"
+keywords:
+  - kafka
+  - amq-streams
+  - oil-and-gas

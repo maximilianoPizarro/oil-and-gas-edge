@@ -1,0 +1,32 @@
+{{- if .Values.cnv.enabled }}
+apiVersion: hco.kubevirt.io/v1beta1
+kind: HyperConverged
+metadata:
+  name: kubevirt-hyperconverged
+  namespace: {{ .Values.cnv.namespace }}
+  labels:
+    app.kubernetes.io/name: device-edge
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "0"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  infra: {}
+  workloads: {}
+  featureGates:
+    withHostPassthroughCPU: {{ .Values.cnv.featureGates.withHostPassthroughCPU }}
+    enableCommonBootImageImport: {{ .Values.cnv.featureGates.enableCommonBootImageImport }}
+    deployVmConsoleProxy: {{ .Values.cnv.featureGates.deployVmConsoleProxy }}
+  liveMigrationConfig:
+    completionTimeoutPerGiB: 800
+    parallelMigrationsPerCluster: 5
+    parallelOutboundMigrationsPerNode: 2
+    progressTimeout: 150
+  certConfig:
+    ca:
+      duration: 48h0m0s
+      renewBefore: 24h0m0s
+    server:
+      duration: 24h0m0s
+      renewBefore: 12h0m0s
+{{- end }}

@@ -1,0 +1,9 @@
+Oil and gas Gateway in {{ .Release.Namespace }}.
+
+- Hostname: https://{{ .Values.gateway.hostname }}
+- Backend: {{ .Values.backend.serviceName }}.{{ .Values.backend.serviceNamespace }}:{{ .Values.backend.servicePort }}
+- OIDC issuer: {{ .Values.oidc.issuerURL }}
+- TLS issuer: {{ .Values.tlsPolicy.issuerRef.name }}
+
+A request without a Bearer token from the oilgas realm is denied at the HTTPRoute
+and does not reach Ignition. In-cluster Jobs use the HTTP Service directly.

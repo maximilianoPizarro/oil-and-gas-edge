@@ -1,0 +1,52 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oilgas-device-events
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: device-events
+    app.kubernetes.io/part-of: oil-and-gas-edge
+data:
+  devices.txt: |
+    {{- range .Values.devices }}
+    {{- $topic := .topic }}
+    {{- $name := .name }}
+    {{- range .tags }}
+    {{ $topic }} {{ $name }} {{ .name }} {{ .base }} {{ .span }} {{ if eq .name "vibration" }}10{{ else }}1{{ end }}
+    {{- end }}
+    {{- end }}
+  publish.sh: |
+    #!/bin/bash
+    set -eu
+    PRODUCER=/opt/kafka/bin/kafka-console-producer.sh
+    BOOTSTRAP="${KAFKA_BOOTSTRAP}"
+    EVENTS="${KAFKA_EVENTS_TOPIC}"
+    INTERVAL="${INTERVAL_SECONDS}"
+    while true; do
+      ts=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+      sec=$(date +%s)
+      while read -r topic device tag base span scale; do
+        [ -n "${topic}" ] || continue
+        case "${topic}" in
+          \#*) continue ;;
+        esac
+        raw=$((base + sec % (span + 1)))
+        if [ "${scale}" = "10" ]; then
+          num="$((raw / 10)).$((raw % 10))"
+        else
+          num="${raw}"
+        fi
+        payload="${device}:{\"site\":\"${device}\",\"device\":\"${device}\",\"tag\":\"${tag}\",\"value\":${num},\"ts\":\"${ts}\"}"
+        printf '%s\n' "${payload}" | "${PRODUCER}" \
+          --bootstrap-server "${BOOTSTRAP}" \
+          --topic "${topic}" \
+          --property parse.key=true \
+          --property key.separator=: >/dev/null
+        printf '%s\n' "${payload}" | "${PRODUCER}" \
+          --bootstrap-server "${BOOTSTRAP}" \
+          --topic "${EVENTS}" \
+          --property parse.key=true \
+          --property key.separator=: >/dev/null
+      done < /config/devices.txt
+      sleep "${INTERVAL}"
+    done

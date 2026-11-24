@@ -1,0 +1,57 @@
+{{- if .Values.kiosk.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ .Values.kiosk.name }}-cloudinit
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: device-edge
+    app.kubernetes.io/part-of: oil-and-gas-edge
+    oilgas.validatedpatterns.io/role: kiosk
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+type: Opaque
+stringData:
+  userdata: |
+    #cloud-config
+    hostname: {{ .Values.kiosk.name }}
+    fqdn: {{ .Values.kiosk.name }}.oilgas.local
+    manage_etc_hosts: true
+    user: cloud-user
+    chpasswd:
+      list: |
+        cloud-user:{{ .Values.vmDefaults.cloudUserPassword }}
+      expire: false
+    ssh_pwauth: true
+    packages:
+      - firefox
+    write_files:
+      - path: /usr/local/bin/oilgas-kiosk.sh
+        permissions: "0755"
+        content: |
+          #!/usr/bin/env bash
+          set -euo pipefail
+          export DISPLAY="${DISPLAY:-:0}"
+          exec firefox --kiosk {{ .Values.kiosk.hmiUrl | quote }}
+      - path: /etc/systemd/system/oilgas-kiosk.service
+        permissions: "0644"
+        content: |
+          [Unit]
+          Description=Oil and gas HMI kiosk
+          After=graphical.target network-online.target
+          Wants=network-online.target
+
+          [Service]
+          User=cloud-user
+          Environment=DISPLAY=:0
+          ExecStart=/usr/local/bin/oilgas-kiosk.sh
+          Restart=on-failure
+          RestartSec=5
+
+          [Install]
+          WantedBy=graphical.target
+    runcmd:
+      - [systemctl, daemon-reload]
+      - [systemctl, enable, oilgas-kiosk.service]
+      - [systemctl, set-default, graphical.target]
+{{- end }}

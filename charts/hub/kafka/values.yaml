@@ -1,0 +1,23 @@
+cluster:
+  name: oilgas
+  version: 3.9.0
+  replicas: 1
+  storage:
+    size: 20Gi
+    class: gp3-csi
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "2"
+      memory: 4Gi
+
+topics:
+  - oilgas.devices.wellpad-north
+  - oilgas.devices.compressor-station
+  - oilgas.devices.pipeline-segment
+  - oilgas.devices.events
+
+metrics:
+  serviceMonitor: true

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: oilgas-mock-devices
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: mock-devices
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+data:
+  {{- range .Values.devices }}
+  {{ .name }}.json: {{ dict "name" .name "enabled" true "type" "Programmable Device Simulator" "description" .description "program" .program | toJson | quote }}
+  {{- end }}

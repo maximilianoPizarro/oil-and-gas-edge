@@ -1,0 +1,13 @@
+apiVersion: v2
+name: device-events
+description: >-
+  Publishes oil and gas simulator tag samples to one Kafka topic per mock
+  device, plus oilgas.devices.events. The stock Ignition image has no Kafka
+  module, so this Deployment is the persistence bridge.
+type: application
+version: 0.1.0
+appVersion: "8.3.10"
+keywords:
+  - kafka
+  - ignition
+  - oil-and-gas

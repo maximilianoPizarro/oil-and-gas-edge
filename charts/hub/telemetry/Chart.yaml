@@ -1,0 +1,14 @@
+apiVersion: v2
+name: telemetry
+description: >-
+  Service mesh metrics for the oil and gas HMI. Istio Telemetry keeps request
+  and latency metrics enabled for the Ignition namespaces. A GrafanaDashboard
+  is loaded into the Grafana instance the Field Content template already runs.
+type: application
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - istio
+  - grafana
+  - opentelemetry
+  - oil-and-gas

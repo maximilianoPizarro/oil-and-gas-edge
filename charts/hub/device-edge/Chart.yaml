@@ -1,0 +1,14 @@
+apiVersion: v2
+name: device-edge
+description: >-
+  Oil and gas field sites as RHEL VMs on OpenShift Virtualization. Each guest
+  runs Red Hat Device Edge (MicroShift) and Ignition Edge with an outgoing
+  Gateway Network connection to the control-room gateway.
+type: application
+version: 0.1.0
+appVersion: "4.22"
+keywords:
+  - microshift
+  - device-edge
+  - oil-and-gas
+  - kubevirt

@@ -1,0 +1,75 @@
+apiVersion: grafana.integreatly.org/v1beta1
+kind: GrafanaDashboard
+metadata:
+  name: {{ .Values.grafana.name }}
+  namespace: {{ .Values.grafana.namespace }}
+  labels:
+    app.kubernetes.io/name: telemetry
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  instanceSelector:
+    matchLabels:
+      dashboards: {{ .Values.grafana.instanceSelector.dashboards }}
+  json: |
+    {
+      "title": "Oil and Gas Edge",
+      "uid": "oil-and-gas-edge",
+      "tags": ["oilgas", "ignition"],
+      "schemaVersion": 39,
+      "version": 1,
+      "timezone": "browser",
+      "refresh": "30s",
+      "panels": [
+        {
+          "title": "Ignition request rate",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0},
+          "targets": [
+            {
+              "expr": "sum(rate(istio_requests_total{request_host=~\"ignition\\..*\"}[5m]))",
+              "legendFormat": "requests"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}
+        },
+        {
+          "title": "Ignition latency p95",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0},
+          "targets": [
+            {
+              "expr": "histogram_quantile(0.95, sum(rate(istio_request_duration_milliseconds_bucket{request_host=~\"ignition\\..*\"}[5m])) by (le))",
+              "legendFormat": "p95"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}
+        },
+        {
+          "title": "Gateway errors",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 0, "y": 8},
+          "targets": [
+            {
+              "expr": "sum(rate(istio_requests_total{request_host=~\"ignition\\..*\",response_code=~\"4..|5..\"}[5m]))",
+              "legendFormat": "errors"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}
+        },
+        {
+          "title": "Kafka messages per device topic",
+          "type": "timeseries",
+          "gridPos": {"h": 8, "w": 12, "x": 12, "y": 8},
+          "targets": [
+            {
+              "expr": "sum by (topic) (rate(kafka_server_brokertopicmetrics_messagesin_total{topic=~\"oilgas.devices..+\"}[5m]))",
+              "legendFormat": "{{ "{{" }}topic}}"
+            }
+          ],
+          "datasource": {"type": "prometheus", "uid": "${DS_PROMETHEUS}"}
+        }
+      ]
+    }

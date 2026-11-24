@@ -1,0 +1,73 @@
+# Public hostname served by the Connectivity Link HTTPRoute.
+# The OpenShift Ingress below stays off; the Gateway is the operator door.
+publicHost: ignition.apps.cluster.example.com
+
+# Shared Gateway Network issuer name used by field-site edge gateways.
+ganIssuerName: oilgas-gan-issuer
+
+# Additional ClusterIP Service so field VMs can reach GAN without headless DNS.
+ganService:
+  enabled: true
+  name: control-room-gan
+  port: 8060
+
+# Non-headless Service for the Connectivity Link HTTPRoute.
+# The chart Service is headless (clusterIP: None) and is a poor Gateway backend.
+httpService:
+  enabled: true
+  name: control-room-http
+  port: 8088
+
+# HTTPRoute namespace allowed to reference the HTTP Service.
+gatewayNamespace: oilgas
+
+# OpenShift SecurityContextConstraints for UID/GID 2003.
+scc:
+  enabled: true
+  name: ignition
+
+# Subchart: inductiveautomation/ignition 0.2.5
+ignition:
+  fullnameOverride: control-room
+
+  commissioning:
+    edition: standard
+    acceptIgnitionEULA: true
+    disableQuickstart: true
+    auth:
+      adminUsername: admin
+
+  gateway:
+    dataVolumeStorageClass: gp3-csi
+    dataVolumeStorageSize: 20Gi
+    maxRAMPercentage: 75
+    publicAddress:
+      host: ignition.apps.cluster.example.com
+      http: 80
+      https: 443
+      autoDetect: false
+
+  certManager:
+    enabled: true
+    ganIssuer:
+      nameOverride: oilgas-gan-issuer
+      create: true
+
+  ingress:
+    # Public access is the oilgas-gateway HTTPRoute, not this OpenShift Route.
+    enabled: false
+    className: openshift-default
+    # Override per cluster, e.g. apps.ocp.<guid>.opentlc.com
+    domainSuffix: apps.cluster.example.com
+    annotations:
+      route.openshift.io/termination: edge
+      route.openshift.io/insecureEdgeTerminationPolicy: Allow
+      haproxy.router.openshift.io/timeout: 300s
+
+  resources:
+    requests:
+      cpu: "1"
+      memory: 2Gi
+    limits:
+      cpu: "4"
+      memory: 8Gi

@@ -1,0 +1,87 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: register-mock-devices
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: mock-devices
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+spec:
+  backoffLimit: 30
+  ttlSecondsAfterFinished: 86400
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: mock-devices
+        app.kubernetes.io/part-of: oil-and-gas-edge
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: register
+          image: quay.io/curl/curl:8.12.1
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: IGNITION_URL
+              value: {{ .Values.ignition.url | quote }}
+            - name: API_COLLECTION
+              value: {{ .Values.ignition.apiCollection | quote }}
+            - name: API_RESOURCE
+              value: {{ .Values.ignition.apiResource | quote }}
+            - name: TOKEN_FILE
+              value: /var/run/secrets/ignition/{{ .Values.ignition.tokenKey }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              set -eu
+              if [ ! -s "${TOKEN_FILE}" ]; then
+                echo "[oilgas] API token secret is empty. Create the token in the Gateway and store it in Vault (ignition-api/token)."
+                exit 1
+              fi
+              TOKEN=$(tr -d '\n' < "${TOKEN_FILE}")
+              ok=0
+              for _ in 1 2 3 4 5 6 7 8 9 10 11 12; do
+                if curl -fsS "${IGNITION_URL}/system/gwinfo" >/dev/null 2>&1; then
+                  ok=1
+                  break
+                fi
+                echo "[oilgas] waiting for ${IGNITION_URL}"
+                sleep 10
+              done
+              [ "${ok}" = 1 ]
+              fail=0
+              for file in /devices/*.json; do
+                name=$(basename "${file}" .json)
+                code=$(curl -sS -o /tmp/device-resp -w '%{http_code}' \
+                  -X POST \
+                  -H "X-Ignition-API-Token: ${TOKEN}" \
+                  -H "Content-Type: application/json" \
+                  --data-binary @"${file}" \
+                  "${IGNITION_URL}/data/api/v1/resources/${API_COLLECTION}/${API_RESOURCE}")
+                echo "[oilgas] ${name} -> HTTP ${code}"
+                case "${code}" in
+                  200|201|204|409) ;;
+                  *)
+                    echo "[oilgas] body: $(cat /tmp/device-resp)"
+                    fail=1
+                    ;;
+                esac
+              done
+              exit "${fail}"
+          volumeMounts:
+            - name: devices
+              mountPath: /devices
+              readOnly: true
+            - name: token
+              mountPath: /var/run/secrets/ignition
+              readOnly: true
+      volumes:
+        - name: devices
+          configMap:
+            name: oilgas-mock-devices
+        - name: token
+          secret:
+            secretName: {{ .Values.ignition.tokenSecret }}
+            optional: true

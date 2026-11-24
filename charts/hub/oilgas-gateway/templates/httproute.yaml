@@ -1,0 +1,22 @@
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: ignition
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: oilgas-gateway
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+      namespace: {{ .Release.Namespace }}
+  hostnames:
+    - {{ .Values.gateway.hostname | quote }}
+  rules:
+    - backendRefs:
+        - name: {{ .Values.backend.serviceName }}
+          namespace: {{ .Values.backend.serviceNamespace }}
+          port: {{ .Values.backend.servicePort }}

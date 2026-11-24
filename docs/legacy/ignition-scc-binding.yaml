@@ -1,0 +1,14 @@
+# OpenShift 4.22 authorizes SCC use with ClusterRoleBindings.
+# A namespace RoleBinding is not enough for this cluster-scoped resource.
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: ignition:scc:ignition
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: system:openshift:scc:ignition
+subjects:
+  - kind: ServiceAccount
+    name: ignition
+    namespace: ignition

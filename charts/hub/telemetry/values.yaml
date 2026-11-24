@@ -1,0 +1,11 @@
+# Namespaces whose mesh traffic should keep Istio golden signals.
+namespaces:
+  - ignition
+  - oilgas
+
+grafana:
+  # Grafana CR from the Field Content observability chart.
+  namespace: openshift-cluster-observability-operator
+  name: oil-and-gas-edge
+  instanceSelector:
+    dashboards: grafana-observability

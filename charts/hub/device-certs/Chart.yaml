@@ -1,0 +1,13 @@
+apiVersion: v2
+name: device-certs
+description: >-
+  Client certificates for oil and gas field sites. A dedicated CA issues one
+  client-auth certificate per site. External Secrets pushes each certificate
+  to Vault and projects it back into the edge namespace for cloud-init.
+type: application
+version: 0.1.0
+appVersion: "1.0"
+keywords:
+  - cert-manager
+  - external-secrets
+  - oil-and-gas

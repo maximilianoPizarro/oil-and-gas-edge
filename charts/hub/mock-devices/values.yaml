@@ -1,0 +1,43 @@
+ignition:
+  # In-cluster HTTP Service created by the control-room chart. Bypasses the Gateway.
+  url: http://control-room-http.ignition.svc.cluster.local:8088
+  # Ignition 8.3 configuration collection for OPC UA device connections.
+  apiCollection: com.inductiveautomation.opcua
+  apiResource: devices
+  tokenSecret: control-room-ignition-api-token
+  tokenKey: token
+
+vault:
+  secretStore: vault-backend
+  secretStoreKind: ClusterSecretStore
+  # Matches values-secret.yaml.template secret ignition-api, prefix global.
+  remoteKey: secret/data/global/ignition-api
+
+devices:
+  - name: wellpad-north
+    description: Upstream well pad
+    program: |
+      0,wellhead-pressure,1450,Good
+      0,flow-rate,120,Good
+      0,tank-level,55,Good
+      5000,wellhead-pressure,1510,Good
+      5000,flow-rate,128,Good
+      5000,tank-level,57,Good
+  - name: compressor-station
+    description: Midstream compression station
+    program: |
+      0,suction-pressure,280,Good
+      0,discharge-pressure,640,Good
+      0,vibration,0.4,Good
+      5000,suction-pressure,295,Good
+      5000,discharge-pressure,670,Good
+      5000,vibration,0.6,Good
+  - name: pipeline-segment
+    description: Pipeline segment
+    program: |
+      0,line-pressure,720,Good
+      0,temperature,18,Good
+      0,leak-indicator,0,Good
+      5000,line-pressure,735,Good
+      5000,temperature,19,Good
+      5000,leak-indicator,0,Good

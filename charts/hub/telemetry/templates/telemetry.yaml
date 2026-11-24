@@ -1,0 +1,25 @@
+{{- range .Values.namespaces }}
+---
+apiVersion: telemetry.istio.io/v1
+kind: Telemetry
+metadata:
+  name: oil-and-gas-edge
+  namespace: {{ . }}
+  labels:
+    app.kubernetes.io/name: telemetry
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  metrics:
+    - overrides:
+        - disabled: false
+          match:
+            metric: REQUEST_COUNT
+            mode: CLIENT_AND_SERVER
+        - disabled: false
+          match:
+            metric: REQUEST_DURATION
+            mode: CLIENT_AND_SERVER
+{{- end }}

@@ -1,0 +1,58 @@
+{{- $root := . }}
+{{- range .Values.sites }}
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: {{ .name }}-rootdisk
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: device-edge
+    app.kubernetes.io/part-of: oil-and-gas-edge
+    oilgas.validatedpatterns.io/site: {{ .name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  source:
+    http:
+      # Set rhelImage.url before sync (Customer Portal or mirror). Empty fails CDI import.
+      url: {{ $root.Values.rhelImage.url | default "https://example.invalid/rhel-9-kvm.qcow2" | quote }}
+  pvc:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: {{ $root.Values.rhelImage.size }}
+    {{- with $root.Values.rhelImage.storageClassName }}
+    storageClassName: {{ . }}
+    {{- end }}
+{{- end }}
+{{- if .Values.kiosk.enabled }}
+---
+apiVersion: cdi.kubevirt.io/v1beta1
+kind: DataVolume
+metadata:
+  name: {{ .Values.kiosk.name }}-rootdisk
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: device-edge
+    app.kubernetes.io/part-of: oil-and-gas-edge
+    oilgas.validatedpatterns.io/role: kiosk
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  source:
+    http:
+      url: {{ .Values.rhelImage.url | default "https://example.invalid/rhel-9-kvm.qcow2" | quote }}
+  pvc:
+    accessModes:
+      - ReadWriteOnce
+    resources:
+      requests:
+        storage: {{ .Values.kiosk.diskSize }}
+    {{- with .Values.rhelImage.storageClassName }}
+    storageClassName: {{ . }}
+    {{- end }}
+{{- end }}

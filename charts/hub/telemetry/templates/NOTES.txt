@@ -1,0 +1,10 @@
+Mesh telemetry for namespaces:
+{{- range .Values.namespaces }}
+  - {{ . }}
+{{- end }}
+
+Grafana dashboard {{ .Values.grafana.name }} is created in {{ .Values.grafana.namespace }}
+and selected by dashboards={{ .Values.grafana.instanceSelector.dashboards }}.
+
+Open https://grafana-observability.<cluster-domain> and the dashboard Oil and Gas Edge.
+The template already scrapes mesh metrics into Thanos. This chart does not install another collector.

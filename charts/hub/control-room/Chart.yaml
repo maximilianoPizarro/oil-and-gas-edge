@@ -1,0 +1,19 @@
+apiVersion: v2
+name: control-room
+description: >-
+  Oil and gas control-room Ignition Gateway for OpenShift. Wraps the official
+  Inductive Automation chart and adds the OpenShift SCC, a routable GAN Service,
+  and the shared Gateway Network issuer used by field sites.
+type: application
+version: 0.1.0
+appVersion: "8.3.10"
+keywords:
+  - ignition
+  - oil-and-gas
+  - scada
+home: https://charts.ia.io
+dependencies:
+  - name: ignition
+    version: 0.2.5
+    repository: https://charts.ia.io
+    alias: ignition

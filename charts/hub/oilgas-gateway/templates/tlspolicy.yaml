@@ -1,0 +1,21 @@
+apiVersion: kuadrant.io/v1
+kind: TLSPolicy
+metadata:
+  name: {{ .Values.gateway.name }}-tls
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: oilgas-gateway
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  targetRef:
+    group: gateway.networking.k8s.io
+    kind: Gateway
+    name: {{ .Values.gateway.name }}
+  issuerRef:
+    name: {{ .Values.tlsPolicy.issuerRef.name }}
+    kind: {{ .Values.tlsPolicy.issuerRef.kind }}
+  duration: {{ .Values.tlsPolicy.duration }}
+  renewBefore: {{ .Values.tlsPolicy.renewBefore }}

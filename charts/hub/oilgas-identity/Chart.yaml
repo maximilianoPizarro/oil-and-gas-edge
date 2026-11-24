@@ -1,0 +1,12 @@
+apiVersion: v2
+name: oilgas-identity
+description: >-
+  Oil and gas realm on the Red Hat Build of Keycloak instance that the Field
+  Content template already runs. Adds realm oilgas and public client ignition-hmi.
+type: application
+version: 0.1.0
+appVersion: "26.4"
+keywords:
+  - rhbk
+  - keycloak
+  - oil-and-gas

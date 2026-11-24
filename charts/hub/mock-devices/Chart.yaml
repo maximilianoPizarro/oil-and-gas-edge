@@ -1,0 +1,13 @@
+apiVersion: v2
+name: mock-devices
+description: >-
+  Registers one Ignition 8.3 Programmable Device Simulator per oil and gas
+  site on the control-room gateway. The same device definitions are embedded
+  by the device-edge chart for each MicroShift guest.
+type: application
+version: 0.1.0
+appVersion: "8.3.10"
+keywords:
+  - ignition
+  - simulator
+  - oil-and-gas

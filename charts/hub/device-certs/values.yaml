@@ -1,0 +1,22 @@
+ca:
+  name: oilgas-device-ca
+  # cert-manager reads ClusterIssuer CA secrets from the controller namespace.
+  namespace: cert-manager
+  commonName: oilgas-device-ca
+
+vault:
+  secretStore: vault-backend
+  secretStoreKind: ClusterSecretStore
+  # KV path inside the store. The store's mount is already "secret".
+  pathPrefix: oilgas/devices
+
+edge:
+  namespace: oilgas-edge
+
+sites:
+  - name: wellpad-north
+    commonName: wellpad-north.oilgas.local
+  - name: compressor-station
+    commonName: compressor-station.oilgas.local
+  - name: pipeline-segment
+    commonName: pipeline-segment.oilgas.local

@@ -1,0 +1,12 @@
+Control-room Ignition installed in {{ .Release.Namespace }}.
+
+- Operator URL: https://{{ .Values.publicHost }} (Connectivity Link HTTPRoute)
+- HTTP Service: {{ .Values.httpService.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.httpService.port }}
+- GAN Service: {{ .Values.ganService.name }}.{{ .Release.Namespace }}.svc.cluster.local:{{ .Values.ganService.port }}
+- Shared GAN issuer: {{ .Values.ganIssuerName }}
+
+Field Device Edge sites should dial the GAN Service and trust this issuer.
+
+Retrieve the admin password with:
+
+  oc get secret -n {{ .Release.Namespace }} {{ .Values.ignition.fullnameOverride | default .Release.Name }}-gateway-admin-password -o jsonpath="{.data.gateway-admin-password}" | base64 -d; echo

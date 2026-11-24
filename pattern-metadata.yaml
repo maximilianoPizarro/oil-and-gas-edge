@@ -1,0 +1,47 @@
+# Source of truth for documentation and QE
+metadata_version: "1.0"
+name: oil-and-gas-edge
+description: >-
+  Oil and gas edge pattern. A control-room Ignition Gateway on the OpenShift hub
+  connects over Gateway Network to field sites simulated as RHEL VMs running
+  Red Hat Device Edge (MicroShift) and Ignition Edge. Device events go to Kafka.
+  Service mesh metrics land on the template Grafana dashboard.
+pattern_version: "0.2"
+display_name: Oil and Gas Edge
+repo_url: https://github.com/maximilianoPizarro/oil-and-gas-edge
+docs_repo_url: https://github.com/validatedpatterns/docs
+issues_url: ""
+docs_url: ""
+ci_url: ""
+logo: ""
+# can be sandbox, tested or maintained
+tier: sandbox
+owners: max
+requirements:
+  hub:
+    compute:
+      platform:
+        aws:
+          replicas: 3
+          type: m5a.4xlarge
+    controlPlane:
+      platform:
+        aws:
+          replicas: 3
+          type: m5a.2xlarge
+
+extra_features:
+  hypershift_support: false
+  spoke_support: false
+
+external_requirements:
+  # Target hub: RHDP / Field Content cluster based on
+  # https://github.com/maximilianoPizarro/from-3scale-to-connectivity-link
+  # (includes openshift-virtualization / HyperConverged with host CPU passthrough).
+  # 3 workers. Prefer the template m5a.8xlarge catalog when it is offered.
+  # m5a.4xlarge (16 vCPU / 64 GiB) is the minimum for this test.
+
+variants:
+  - name: hub
+    default: true
+    description: Control-room Ignition, device certificates, Kafka events, and Device Edge VMs

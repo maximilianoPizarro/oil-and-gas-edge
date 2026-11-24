@@ -1,0 +1,14 @@
+# Ignition 8.3 on the OpenShift sandbox.
+# Hostname: ignition.apps.ocp.c4r2v.sandbox662.opentlc.com
+ingress:
+  enabled: true
+  className: openshift-default
+  domainSuffix: apps.ocp.c4r2v.sandbox662.opentlc.com
+  annotations:
+    route.openshift.io/termination: edge
+    route.openshift.io/insecureEdgeTerminationPolicy: Allow
+    haproxy.router.openshift.io/timeout: 300s
+
+gateway:
+  dataVolumeStorageClass: gp3-csi
+  dataVolumeStorageSize: 10Gi

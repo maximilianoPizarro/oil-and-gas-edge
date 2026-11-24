@@ -1,0 +1,51 @@
+kafka:
+  bootstrap: oilgas-kafka-bootstrap.oilgas.svc:9092
+  eventsTopic: oilgas.devices.events
+
+image:
+  repository: quay.io/strimzi/kafka
+  tag: 0.45.0
+  pullPolicy: IfNotPresent
+
+intervalSeconds: 5
+
+# Same tag names as charts/hub/mock-devices. Values oscillate locally so an
+# event is stored even when the HMI is closed. The Ignition image cannot
+# publish to Kafka itself.
+devices:
+  - name: wellpad-north
+    topic: oilgas.devices.wellpad-north
+    tags:
+      - name: wellhead-pressure
+        base: 1450
+        span: 70
+      - name: flow-rate
+        base: 120
+        span: 20
+      - name: tank-level
+        base: 55
+        span: 10
+  - name: compressor-station
+    topic: oilgas.devices.compressor-station
+    tags:
+      - name: suction-pressure
+        base: 280
+        span: 20
+      - name: discharge-pressure
+        base: 640
+        span: 40
+      - name: vibration
+        base: 4
+        span: 3
+  - name: pipeline-segment
+    topic: oilgas.devices.pipeline-segment
+    tags:
+      - name: line-pressure
+        base: 720
+        span: 20
+      - name: temperature
+        base: 18
+        span: 4
+      - name: leak-indicator
+        base: 0
+        span: 1

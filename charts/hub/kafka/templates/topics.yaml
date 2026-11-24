@@ -1,0 +1,22 @@
+{{- $root := . }}
+{{- range .Values.topics }}
+---
+apiVersion: kafka.strimzi.io/v1beta2
+kind: KafkaTopic
+metadata:
+  name: {{ . }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    strimzi.io/cluster: {{ $root.Values.cluster.name }}
+    app.kubernetes.io/name: kafka
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  topicName: {{ . }}
+  partitions: 1
+  replicas: 1
+  config:
+    retention.ms: 604800000
+{{- end }}

@@ -1,0 +1,7 @@
+Device events publisher in {{ .Release.Namespace }}.
+
+Bootstrap: {{ .Values.kafka.bootstrap }}
+Fan-in topic: {{ .Values.kafka.eventsTopic }}
+
+Each message is JSON with site, device, tag, value and ts. The Kafka key is the device name.
+The stock Ignition image has no Kafka module, so this Deployment emits the same tag names as the Programmable Device Simulators.

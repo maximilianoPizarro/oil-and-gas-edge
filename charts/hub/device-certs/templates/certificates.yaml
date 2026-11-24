@@ -1,0 +1,27 @@
+{{- $root := . }}
+{{- range .Values.sites }}
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: {{ .name }}
+  namespace: {{ $root.Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: device-certs
+    app.kubernetes.io/part-of: oil-and-gas-edge
+    oilgas.validatedpatterns.io/site: {{ .name }}
+  annotations:
+    argocd.argoproj.io/sync-wave: "4"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  secretName: {{ .name }}-tls
+  commonName: {{ .commonName }}
+  usages:
+    - client auth
+  privateKey:
+    algorithm: ECDSA
+    size: 256
+  issuerRef:
+    name: {{ $root.Values.ca.name }}
+    kind: ClusterIssuer
+{{- end }}

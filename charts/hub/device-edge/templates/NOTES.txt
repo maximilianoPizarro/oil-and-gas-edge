@@ -1,0 +1,23 @@
+Oil and gas Device Edge sites declared in namespace {{ .Release.Namespace }}.
+
+Sites:
+{{- range .Values.sites }}
+  - {{ .name }} ({{ .displayName }})
+{{- end }}
+{{- if .Values.kiosk.enabled }}
+  - {{ .Values.kiosk.name }} opens {{ .Values.kiosk.hmiUrl }}
+{{- end }}
+
+Each RHEL field VM cloud-init installs MicroShift and Ignition Edge with an outgoing
+Gateway Network connection to {{ .Values.controlRoom.ganHost }}:{{ .Values.controlRoom.ganPort }}.
+Podman is installed as an image tool. The gateway process runs on MicroShift.
+The guest also projects the IoT client certificate and registers that site's
+Programmable Device Simulator.
+
+Prerequisites:
+  1. OpenShift Virtualization already installed (or cnv.enabled true)
+  2. Control-room release with shared issuer {{ .Values.controlRoom.ganIssuerName }}
+  3. rhelImage.url set to a RHEL 9 KVM guest image
+
+On the control-room Ignition UI, open Config > Networking > Gateway Network
+to see incoming connections from the field sites.

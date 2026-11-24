@@ -1,0 +1,5 @@
+# Platform overrides for AWS hubs.
+# Prefer the Field Content / from-3scale-to-connectivity-link catalog so
+# OpenShift Virtualization and large workers are already available.
+---
+{}

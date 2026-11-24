@@ -1,0 +1,49 @@
+{{- if .Values.scc.enabled }}
+# Same restrictions as restricted-v2, but UID and fsGroup are not limited
+# to the namespace range. The Ignition image and Helm chart run as UID/GID 2003.
+apiVersion: security.openshift.io/v1
+kind: SecurityContextConstraints
+metadata:
+  name: {{ .Values.scc.name }}
+  labels:
+    app.kubernetes.io/name: control-room
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    kubernetes.io/description: Allows the Ignition gateway to run as UID/GID 2003 with a restricted profile.
+    argocd.argoproj.io/sync-wave: "-2"
+allowHostDirVolumePlugin: false
+allowHostIPC: false
+allowHostNetwork: false
+allowHostPID: false
+allowHostPorts: false
+allowPrivilegeEscalation: false
+allowPrivilegedContainer: false
+allowedCapabilities:
+  - NET_BIND_SERVICE
+defaultAddCapabilities: null
+fsGroup:
+  type: RunAsAny
+priority: 10
+readOnlyRootFilesystem: false
+requiredDropCapabilities:
+  - ALL
+runAsUser:
+  type: RunAsAny
+seLinuxContext:
+  type: MustRunAs
+seccompProfiles:
+  - runtime/default
+supplementalGroups:
+  type: RunAsAny
+userNamespaceLevel: AllowHostLevel
+volumes:
+  - configMap
+  - csi
+  - downwardAPI
+  - emptyDir
+  - ephemeral
+  - image
+  - persistentVolumeClaim
+  - projected
+  - secret
+{{- end }}

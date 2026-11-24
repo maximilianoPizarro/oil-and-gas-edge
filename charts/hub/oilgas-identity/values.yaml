@@ -1,0 +1,11 @@
+keycloak:
+  # Field Content template Keycloak CR.
+  name: rhbk
+  namespace: rhbk-operator
+
+realm:
+  name: oilgas
+  displayName: Oil and Gas
+  # Public hostname of the HMI, without scheme. Used for redirect URIs.
+  host: ignition.apps.cluster.example.com
+  clientID: ignition-hmi

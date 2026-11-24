@@ -1,0 +1,6 @@
+dependencies:
+- name: ignition
+  repository: https://charts.ia.io
+  version: 0.2.5
+digest: sha256:6c299a881e13ee2733c12147e4d05e5f7ac46b8f734bf5254d6b395dceacd549
+generated: "2026-11-20T17:19:16.4132143-03:00"

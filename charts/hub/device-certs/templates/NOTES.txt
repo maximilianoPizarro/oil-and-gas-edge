@@ -1,0 +1,10 @@
+Device CA {{ .Values.ca.name }} issues a client certificate for each field site.
+
+Vault path prefix: {{ .Values.vault.pathPrefix }}
+Edge namespace: {{ .Values.edge.namespace }}
+
+Confirm with:
+
+  oc get clusterissuer {{ .Values.ca.name }}
+  oc get certificate,pushsecret -n {{ .Release.Namespace }}
+  oc get externalsecret -n {{ .Values.edge.namespace }}

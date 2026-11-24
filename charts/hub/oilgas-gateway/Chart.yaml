@@ -1,0 +1,13 @@
+apiVersion: v2
+name: oilgas-gateway
+description: >-
+  Connectivity Link door for the oil and gas HMI. Istio Gateway, TLSPolicy,
+  HTTPRoute to the control-room Ignition Service, and an AuthPolicy that
+  requires a JWT from the oilgas realm.
+type: application
+version: 0.1.0
+appVersion: "8.3.10"
+keywords:
+  - connectivity-link
+  - ignition
+  - oil-and-gas

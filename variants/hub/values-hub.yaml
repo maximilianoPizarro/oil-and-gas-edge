@@ -1,0 +1,196 @@
+clusterGroup:
+  name: hub
+  isHubCluster: true
+
+  namespaces:
+    ignition: {}
+    oilgas: {}
+    oilgas-edge: {}
+    # The Field Content template already owns cert-manager, RHBK (rhbk-operator),
+    # Service Mesh, Connectivity Link, External Secrets, Vault, CNV and Grafana.
+    # Do not add OperatorGroups for those namespaces.
+    cert-manager: {}
+    rhbk-operator: {}
+
+  subscriptions:
+    # Kafka is not part of the Field Content template.
+    amq-streams:
+      name: amq-streams
+      namespace: openshift-operators
+      channel: stable
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      installPlanApproval: Automatic
+    # OpenShift Virtualization is already installed by the template.
+    # On a cluster without it, uncomment this subscription and set
+    # device-edge cnv.enabled=true.
+    # kubevirt-hyperconverged:
+    #   name: kubevirt-hyperconverged
+    #   namespace: openshift-cnv
+    #   channel: stable
+    #   source: redhat-operators
+    #   sourceNamespace: openshift-marketplace
+    #   installPlanApproval: Automatic
+
+  argoProjects:
+    - hub
+    - oilgas
+
+  sharedValueFiles:
+    - '/overrides/values-{{ $.Values.global.clusterPlatform }}.yaml'
+
+  applications:
+    cert-manager-config:
+      name: cert-manager-config
+      namespace: cert-manager
+      argoProject: oilgas
+      repoURL: https://github.com/maximilianoPizarro/rhbk-cert
+      targetRevision: main
+      path: charts/all/cert-manager-config
+      syncWave: "5"
+      overrides:
+        - name: acme.enabled
+          value: "false"
+        - name: selfSigned.enabled
+          value: "true"
+        - name: selfSigned.caCertSecretName
+          value: oilgas-lab-ca
+        # The upstream chart names this CA issuer letsencrypt-prod even when
+        # it is self-signed, so TLSPolicy can keep that issuerRef.
+        - name: rhbkCertificate.dnsName
+          value: 'rhbk.{{ .Values.global.localClusterDomain }}'
+        - name: rhbkCertificate.namespace
+          value: rhbk-operator
+        - name: rhbkCertificate.issuerRef.name
+          value: letsencrypt-prod
+
+    # The Field Content template already runs Keycloak (CR rhbk in rhbk-operator).
+    # Leave this application commented on that cluster. Uncomment it only when
+    # the hub has no RHBK instance yet.
+    # rhbk-cert:
+    #   name: rhbk-cert
+    #   namespace: rhbk-operator
+    #   argoProject: oilgas
+    #   repoURL: https://github.com/maximilianoPizarro/rhbk-cert
+    #   targetRevision: main
+    #   path: charts/all/rhbk-cert
+    #   syncWave: "6"
+
+    oilgas-identity:
+      name: oilgas-identity
+      namespace: rhbk-operator
+      argoProject: oilgas
+      path: charts/hub/oilgas-identity
+      syncWave: "6"
+      overrides:
+        - name: keycloak.name
+          value: rhbk
+        - name: keycloak.namespace
+          value: rhbk-operator
+        - name: realm.host
+          value: 'ignition.{{ .Values.global.localClusterDomain }}'
+
+    device-certs:
+      name: device-certs
+      namespace: oilgas
+      argoProject: oilgas
+      path: charts/hub/device-certs
+      syncWave: "7"
+
+    oilgas-gateway:
+      name: oilgas-gateway
+      namespace: oilgas
+      argoProject: oilgas
+      path: charts/hub/oilgas-gateway
+      syncWave: "8"
+      overrides:
+        - name: gateway.hostname
+          value: 'ignition.{{ .Values.global.localClusterDomain }}'
+        - name: oidc.issuerURL
+          value: 'https://rhbk.{{ .Values.global.localClusterDomain }}/realms/oilgas'
+        - name: tlsPolicy.issuerRef.name
+          value: letsencrypt-prod
+
+    kafka:
+      name: kafka
+      namespace: oilgas
+      argoProject: oilgas
+      path: charts/hub/kafka
+      syncWave: "9"
+
+    control-room:
+      name: control-room
+      namespace: ignition
+      argoProject: oilgas
+      path: charts/hub/control-room
+      syncWave: "10"
+      overrides:
+        - name: publicHost
+          value: 'ignition.{{ .Values.global.localClusterDomain }}'
+        - name: ignition.ingress.enabled
+          value: "false"
+        - name: ignition.gateway.publicAddress.host
+          value: 'ignition.{{ .Values.global.localClusterDomain }}'
+        - name: ignition.gateway.publicAddress.http
+          value: "80"
+        - name: ignition.gateway.publicAddress.https
+          value: "443"
+        - name: ignition.gateway.publicAddress.autoDetect
+          value: "false"
+      ignoreDifferences:
+        - group: apps
+          kind: StatefulSet
+          jsonPointers:
+            - /spec/volumeClaimTemplates
+        - group: ""
+          kind: Secret
+          name: control-room-gateway-admin-password
+          jsonPointers:
+            - /data
+
+    mock-devices:
+      name: mock-devices
+      namespace: ignition
+      argoProject: oilgas
+      path: charts/hub/mock-devices
+      syncWave: "15"
+
+    device-events:
+      name: device-events
+      namespace: oilgas
+      argoProject: oilgas
+      path: charts/hub/device-events
+      syncWave: "16"
+
+    telemetry:
+      name: telemetry
+      namespace: oilgas
+      argoProject: oilgas
+      path: charts/hub/telemetry
+      syncWave: "17"
+
+    device-edge:
+      name: device-edge
+      namespace: oilgas-edge
+      argoProject: oilgas
+      path: charts/hub/device-edge
+      syncWave: "20"
+      overrides:
+        - name: cnv.enabled
+          value: "false"
+        - name: kiosk.hmiUrl
+          value: 'https://ignition.{{ .Values.global.localClusterDomain }}'
+      ignoreDifferences:
+        - group: kubevirt.io
+          kind: VirtualMachine
+          jqPathExpressions:
+            - .spec.template.spec.domain.firmware
+        - group: cdi.kubevirt.io
+          kind: DataVolume
+          jqPathExpressions:
+            - .status
+
+  imperative:
+    jobs: []
+
+  managedClusterGroups: {}
