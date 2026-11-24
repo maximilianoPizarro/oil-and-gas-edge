@@ -4,6 +4,8 @@ Validated Pattern for oil and gas. A control-room Ignition 8.3 Gateway on the Op
 
 Repository: [maximilianoPizarro/oil-and-gas-edge](https://github.com/maximilianoPizarro/oil-and-gas-edge).
 
+Full documentation: <https://maximilianopizarro.github.io/oil-and-gas-edge/> ([español](https://maximilianopizarro.github.io/oil-and-gas-edge/es/)).
+
 Target hub: an RHDP / Field Content cluster from
 [from-3scale-to-connectivity-link](https://github.com/maximilianoPizarro/from-3scale-to-connectivity-link).
 That catalog already installs GitOps, Service Mesh, Connectivity Link, Red Hat Build of Keycloak, External Secrets, Vault, OpenShift Virtualization, OpenTelemetry, Tempo and Grafana. This pattern does not install those again, and it does not install Ansible Automation Platform. GitOps replaces the Podman unit push from [hmi-demo](https://github.com/maximilianoPizarro/hmi-demo). Podman stays on the guest only as an image tool. Ignition Edge runs on MicroShift.
@@ -47,7 +49,11 @@ charts/hub/device-events/          # publisher for device events
 charts/hub/telemetry/              # Istio Telemetry + Grafana dashboard
 charts/hub/device-edge/            # field VMs, MicroShift cloud-init, kiosk
 values-secret.yaml.template
+docs/index.html                    # documentation site, English
+docs/es/index.html                 # documentation site, Spanish
+docs/images/                       # generated figures + attribution
 docs/sizing.md
+tools/diagrams/                    # source for the figures (node render.mjs)
 ```
 
 `cert-manager-config` is pulled from `maximilianoPizarro/rhbk-cert` with ACME off and self-signed on. The Keycloak chart from that repo stays commented out because the Field Content template already runs Keycloak (`rhbk` in `rhbk-operator`).

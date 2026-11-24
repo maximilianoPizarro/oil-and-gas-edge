@@ -3,8 +3,10 @@ kafka:
   eventsTopic: oilgas.devices.events
 
 image:
-  repository: quay.io/strimzi/kafka
-  tag: 0.45.0
+  # AMQ Streams Kafka image already pulled for the broker. Tag 4.1.0 is not
+  # published; the operator pins this digest. Ships kafka-console-producer.sh.
+  repository: registry.redhat.io/amq-streams/kafka-41-rhel9@sha256:942d8f32452e3f56c47e7eaefa9db8bc1fcf346558006b75f5dbb62cd45a723c
+  tag: ""
   pullPolicy: IfNotPresent
 
 intervalSeconds: 5

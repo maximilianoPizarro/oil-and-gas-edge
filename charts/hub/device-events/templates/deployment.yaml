@@ -22,7 +22,7 @@ spec:
     spec:
       containers:
         - name: publisher
-          image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
+          image: {{ .Values.image.repository }}{{ if .Values.image.tag }}:{{ .Values.image.tag }}{{ end }}
           imagePullPolicy: {{ .Values.image.pullPolicy }}
           command: ["/bin/bash", "/config/publish.sh"]
           env:

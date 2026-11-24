@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Oil and Gas Edge — SCADA Ignition en OpenShift | Validated Pattern</title>
+  <meta name="description" content="Validated Pattern para oil and gas: una sala de control Ignition 8.3 en el hub de OpenShift, tres sitios de campo con Red Hat Device Edge sobre OpenShift Virtualization, eventos de dispositivo en Kafka y Connectivity Link en la puerta." />
+  <link rel="canonical" href="https://maximilianopizarro.github.io/oil-and-gas-edge/es/" />
+  <link rel="alternate" hreflang="en" href="https://maximilianopizarro.github.io/oil-and-gas-edge/" />
+  <link rel="alternate" hreflang="es" href="https://maximilianopizarro.github.io/oil-and-gas-edge/es/" />
+  <link rel="alternate" hreflang="x-default" href="https://maximilianopizarro.github.io/oil-and-gas-edge/" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="Oil and Gas Edge — SCADA Ignition en OpenShift" />
+  <meta property="og:description" content="Una sala de control Ignition en el hub de OpenShift, tres sitios de campo con Device Edge, eventos de dispositivo en Kafka y Connectivity Link en la puerta." />
+  <meta property="og:url" content="https://maximilianopizarro.github.io/oil-and-gas-edge/es/" />
+  <meta property="og:image" content="https://maximilianopizarro.github.io/oil-and-gas-edge/images/cover.png" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="Oil and Gas Edge — SCADA Ignition en OpenShift" />
+  <meta name="twitter:description" content="Una sala de control Ignition en el hub de OpenShift, tres sitios de campo con Device Edge, eventos de dispositivo en Kafka y Connectivity Link en la puerta." />
+  <meta name="twitter:image" content="https://maximilianopizarro.github.io/oil-and-gas-edge/images/cover.png" />
+  <link rel="icon" href="../images/logo.svg" type="image/svg+xml" />
+  <style>
+    :root {
+      --pf-bg-dark:    #151515;
+      --pf-bg-card:    #1e1e1e;
+      --pf-bg-hover:   #292929;
+      --pf-border:     #3c3f42;
+      --pf-text:       #e0e0e0;
+      --pf-text-muted: #8a8d90;
+      --pf-red:        #ee0000;
+      --pf-red-light:  #ff6060;
+      --pf-blue:       #0066cc;
+      --pf-blue-light: #73bcf7;
+      --pf-gold:       #f0ab00;
+      --pf-green:      #3e8635;
+      --pf-cyan:       #009596;
+      --pf-code-bg:    #0f0f0f;
+      --pf-radius:     8px;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body { font-family: "Red Hat Text", "Segoe UI", "Liberation Sans", sans-serif; background: var(--pf-bg-dark); color: var(--pf-text); line-height: 1.7; font-size: 16px; }
+
+    /* NAV */
+    nav { background: #0c0c0c; border-bottom: 1px solid var(--pf-border); padding: 12px 24px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+    nav .brand { font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-weight: 700; font-size: 1.1em; color: #fff; display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    nav .brand img { width: 28px; height: 28px; }
+    nav .nav-links { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    nav .nav-links a { color: var(--pf-text-muted); text-decoration: none; font-size: 0.9em; transition: color 0.2s; }
+    nav .nav-links a:hover { color: var(--pf-red-light); }
+    nav .lang-switch { background: var(--pf-bg-card); border: 1px solid var(--pf-border); border-radius: var(--pf-radius); padding: 4px 12px; color: var(--pf-text-muted); font-size: 0.85em; text-decoration: none; transition: border-color 0.2s; }
+    nav .lang-switch:hover { border-color: var(--pf-red); color: var(--pf-red-light); }
+
+    /* HERO */
+    /* The cover layer is optional: if images/cover.png is absent the browser
+       skips that background layer and the base gradient shows through. */
+    .hero {
+      background:
+        linear-gradient(180deg, rgba(12,12,12,0.86) 0%, rgba(12,12,12,0.76) 55%, rgba(12,12,12,0.66) 100%),
+        url("../images/cover.png") center / cover no-repeat,
+        linear-gradient(135deg, #0c0c0c 0%, #1a0000 50%, #0c0c0c 100%);
+      border-bottom: 3px solid var(--pf-red);
+      padding: 70px 20px 60px;
+      text-align: center;
+    }
+    .hero .rh-badge { display: inline-block; background: var(--pf-red); color: #fff; font-family: "Red Hat Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 0.75em; font-weight: 500; padding: 3px 10px; border-radius: 3px; margin-bottom: 20px; letter-spacing: 0.5px; }
+    .hero h1 { font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-weight: 900; font-size: 2.8em; letter-spacing: -0.5px; background: linear-gradient(90deg, var(--pf-red-light), var(--pf-gold)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .hero p.subtitle { color: var(--pf-text-muted); font-size: 1.15em; margin-top: 12px; max-width: 720px; margin-left: auto; margin-right: auto; }
+    .hero .badges { margin-top: 24px; display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+    .badge { display: inline-block; padding: 4px 14px; border-radius: 20px; font-size: 0.8em; font-weight: 600; font-family: "Red Hat Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; }
+    .badge-red  { background: var(--pf-red); color: #fff; }
+    .badge-blue { background: var(--pf-blue); color: #fff; }
+    .badge-gold { background: var(--pf-gold); color: #000; }
+    .badge-cyan { background: var(--pf-cyan); color: #fff; }
+    .badge-green { background: var(--pf-green); color: #fff; }
+    .hero .cta { margin-top: 32px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-block; padding: 10px 24px; border-radius: var(--pf-radius); font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-weight: 600; font-size: 0.95em; text-decoration: none; transition: all 0.2s; }
+    .btn-primary { background: var(--pf-red); color: #fff; }
+    .btn-primary:hover { background: #c00; }
+    .btn-outline { border: 1px solid var(--pf-border); color: var(--pf-text); }
+    .btn-outline:hover { border-color: var(--pf-red); color: var(--pf-red-light); }
+
+    /* LAYOUT */
+    .container { padding: 28px 24px 48px; }
+    h2 { font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-weight: 700; font-size: 1.8em; margin: 48px 0 20px; padding-bottom: 10px; border-bottom: 2px solid var(--pf-red); color: #fff; }
+    h3 { font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-weight: 600; font-size: 1.25em; margin: 28px 0 10px; color: var(--pf-blue-light); }
+    p { margin-bottom: 14px; }
+    ul, ol { margin: 0 0 16px 22px; }
+    li { margin-bottom: 7px; }
+    a { color: var(--pf-blue-light); text-decoration: none; transition: color 0.2s; }
+    a:hover { color: var(--pf-gold); }
+    strong { color: #fff; }
+
+    /* CARDS */
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 18px; margin: 24px 0; }
+    .card { background: var(--pf-bg-card); border: 1px solid var(--pf-border); border-radius: var(--pf-radius); padding: 24px; transition: border-color 0.2s, transform 0.15s; }
+    .card:hover { border-color: var(--pf-red); transform: translateY(-2px); }
+    .card .icon { font-size: 1.8em; margin-bottom: 12px; }
+    .card h4 { font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-size: 1.05em; color: #fff; margin-bottom: 6px; }
+    .card p { color: var(--pf-text-muted); font-size: 0.93em; margin: 0; }
+
+    /* TABLE */
+    table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 0.92em; }
+    th { background: var(--pf-bg-card); color: var(--pf-gold); text-align: left; padding: 10px 14px; font-family: "Red Hat Display", "Segoe UI", "Liberation Sans", sans-serif; font-weight: 600; border-bottom: 2px solid var(--pf-red); }
+    td { padding: 10px 14px; border-bottom: 1px solid var(--pf-border); vertical-align: top; }
+    tr:hover td { background: var(--pf-bg-hover); }
+
+    /* CODE */
+    code { font-family: "Red Hat Mono", ui-monospace, "Cascadia Mono", Consolas, monospace; background: var(--pf-code-bg); padding: 2px 6px; border-radius: 4px; font-size: 0.88em; color: var(--pf-red-light); }
+    pre { background: var(--pf-code-bg); border: 1px solid var(--pf-border); border-left: 4px solid var(--pf-red); border-radius: var(--pf-radius); padding: 20px; overflow-x: auto; margin: 16px 0; position: relative; }
+    pre code { background: none; padding: 0; color: var(--pf-text); font-size: 0.87em; }
+
+    /* FIGURES */
+    figure { margin: 20px 0 8px; }
+    figure img { width: 100%; height: auto; display: block; border: 1px solid var(--pf-border); border-radius: var(--pf-radius); background: #121212; }
+    figcaption { margin-top: 10px; font-size: 0.86em; color: var(--pf-text-muted); text-align: center; }
+
+    /* CALLOUT */
+    .callout { background: #121212; border: 1px solid var(--pf-border); border-left: 4px solid var(--pf-gold); border-radius: var(--pf-radius); padding: 16px 20px; margin: 18px 0; font-size: 0.94em; }
+    .callout strong { color: var(--pf-gold); }
+
+    /* FOOTER */
+    footer { border-top: 1px solid var(--pf-border); padding: 32px 20px; text-align: center; color: var(--pf-text-muted); font-size: 0.88em; }
+    footer a { color: var(--pf-red-light); }
+
+    .page { max-width: 1100px; margin: 0 auto; }
+    .table-wrap { overflow-x: auto; }
+    .copy-btn { position: absolute; top: 8px; right: 8px; background: #1e1e1e; color: #e0e0e0; border: 1px solid #3c3f42; border-radius: 4px; font-family: inherit; font-size: 0.75em; padding: 2px 8px; cursor: pointer; }
+    .copy-btn:hover { border-color: #ee0000; color: #fff; }
+    @media (max-width: 900px) {
+      .hero h1 { font-size: 1.9em; }
+      nav { flex-wrap: wrap; gap: 10px; }
+      nav .nav-links { display: flex; width: 100%; }
+    }
+  </style>
+</head>
+<body data-copy="Copiar" data-copied="Copiado">
+
+<nav>
+  <a href="#" class="brand">
+    <img src="../images/logo.svg" alt="" width="28" height="28" />
+    oil-and-gas-edge
+  </a>
+  <div class="nav-links">
+    <a href="#overview">Resumen</a>
+    <a href="#architecture">Arquitectura</a>
+    <a href="#applications">Aplicaciones</a>
+    <a href="#gateway-network">Gateway Network</a>
+    <a href="#certificates">Certificados</a>
+    <a href="#events">Eventos</a>
+    <a href="#install">Instalación</a>
+    <a href="#verify">Verificación</a>
+    <a href="https://github.com/maximilianoPizarro/oil-and-gas-edge">GitHub</a>
+  </div>
+  <a href="../" class="lang-switch">🌐 English</a>
+</nav>
+
+<section class="hero">
+  <div class="rh-badge">Validated Pattern &middot; nivel sandbox</div>
+  <h1>Oil and Gas Edge<br>en OpenShift</h1>
+  <p class="subtitle">
+    Una sala de control Ignition 8.3 en el hub, tres sitios de campo con Red Hat Device Edge sobre
+    OpenShift Virtualization, eventos de dispositivo en Kafka y Connectivity Link como única puerta
+    para el operador.
+  </p>
+  <div class="badges">
+    <span class="badge badge-red">Ignition 8.3</span>
+    <span class="badge badge-blue">Device Edge / MicroShift</span>
+    <span class="badge badge-cyan">Connectivity Link</span>
+    <span class="badge badge-gold">AMQ Streams 4.1</span>
+    <span class="badge badge-green">OCP 4.20+</span>
+  </div>
+  <div class="cta">
+    <a href="https://github.com/maximilianoPizarro/oil-and-gas-edge" class="btn btn-primary">Ver en GitHub</a>
+    <a href="#install" class="btn btn-outline">Instalación</a>
+  </div>
+</section>
+
+<div class="page">
+<div class="container">
+
+  <section id="overview">
+    <h2>Qué construye</h2>
+    <p>
+      Los sitios industriales no están en el centro de datos. La sala de control sí. Este patrón modela esa
+      separación como un único despliegue GitOps: un <strong>Gateway Ignition de sala de control</strong> corre en el
+      hub de OpenShift, tres <strong>sitios de campo</strong> corren como máquinas virtuales RHEL sobre OpenShift
+      Virtualization con <strong>Red Hat Device Edge (MicroShift)</strong> e Ignition Edge adentro, y las dos mitades
+      se encuentran sobre el <strong>Gateway Network</strong> de Ignition. Las muestras de dispositivo se persisten en
+      Kafka para que la historia sobreviva a una HMI cerrada, y el operador llega a la HMI únicamente por un
+      gateway de <strong>Connectivity Link</strong> que exige un JWT de un realm de Keycloak dedicado.
+    </p>
+
+    <div class="card-grid">
+      <div class="card">
+        <div class="icon">🏭</div>
+        <h4>Sala de control en el hub</h4>
+        <p>Ignition 8.3 Standard, envuelto para correr bajo una SecurityContextConstraints de OpenShift y exponer un Service de Gateway Network ruteable en lugar del Service headless del chart.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📡</div>
+        <h4>Tres sitios con Device Edge</h4>
+        <p>Well pad, estación compresora y segmento de ducto; cada uno un guest RHEL con MicroShift e Ignition Edge que marca hacia la sala de control por el puerto 8060.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔐</div>
+        <h4>Tres planos de certificados</h4>
+        <p>Operadores, gateways de Ignition y dispositivos de campo se emiten por separado. Los certificados de dispositivo se guardan en Vault y se proyectan de vuelta al namespace de borde.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🌐</div>
+        <h4>Una sola puerta pública</h4>
+        <p>Un Gateway de Connectivity Link con TLSPolicy y AuthPolicy. La Route de OpenShift que el chart de Ignition crearía queda apagada.</p>
+      </div>
+      <div class="card">
+        <div class="icon">📈</div>
+        <h4>Eventos que sobreviven a la HMI</h4>
+        <p>La imagen estándar de Ignition no trae módulo de Kafka, así que un publicador escribe cada muestra del simulador a un tópico por sitio más un tópico de eventos compartido.</p>
+      </div>
+      <div class="card">
+        <div class="icon">🔄</div>
+        <h4>GitOps, no un script de push</h4>
+        <p>Argo CD es dueño de cada objeto mediante sync waves ordenadas. No hay push de unidades Podman ni Ansible Automation Platform en el circuito.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Clúster destino.</strong> Este patrón espera un hub RHDP / Field Content construido desde
+      <a href="https://github.com/maximilianoPizarro/from-3scale-to-connectivity-link">from-3scale-to-connectivity-link</a>.
+      Ese catálogo ya instala GitOps, Service Mesh, Connectivity Link, Red Hat build of Keycloak, External
+      Secrets, Vault, OpenShift Virtualization, OpenTelemetry, Tempo y Grafana. El patrón no vuelve a instalar
+      ninguno de ellos, y nunca instala Ansible Automation Platform.
+    </div>
+  </section>
+
+  <section id="architecture">
+    <h2>Arquitectura</h2>
+    <figure>
+      <img src="../images/architecture-es.png" alt="Arquitectura de Oil and Gas Edge: un hub de OpenShift con un gateway de Connectivity Link, un realm de Red Hat build of Keycloak y una sala de control Ignition 8.3, conectada por Gateway Network a tres sitios de campo con Device Edge y una máquina virtual kiosco para la HMI." />
+      <figcaption>El operador abre la HMI desde la VM kiosco a través del gateway. Los sitios de campo marcan hacia la sala de control por el puerto 8060.</figcaption>
+    </figure>
+
+    <h3>Sitios de campo</h3>
+    <div class="table-wrap">
+    <table>
+      <thead>
+        <tr><th>Sitio</th><th>Rol</th><th>Tags del simulador</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>wellpad-north</code></td><td>Well pad upstream</td><td>presión de boca de pozo, caudal, nivel de tanque</td></tr>
+        <tr><td><code>compressor-station</code></td><td>Compresión midstream</td><td>presión de succión, presión de descarga, vibración</td></tr>
+        <tr><td><code>pipeline-segment</code></td><td>Segmento de ducto</td><td>presión de línea, temperatura, indicador de fuga</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      La sala de control registra los tres simuladores. Cada gateway de borde registra solo el propio, con el
+      mismo nombre, de modo que una ruta de tag resuelve igual se la lea en la sala de control o en el sitio. La
+      VM kiosco (<code>hmi-kiosk</code>, 2 vCPU / 4 GiB) corre Firefox y nada más: no corre Ignition.
+    </p>
+
+    <h3>Namespaces</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Namespace</th><th>Dueño</th><th>Contiene</th></tr></thead>
+      <tbody>
+        <tr><td><code>ignition</code></td><td>este patrón</td><td>Gateway de sala de control, SCC, Services GAN y HTTP, Job de registro de simuladores</td></tr>
+        <tr><td><code>oilgas</code></td><td>este patrón</td><td>Gateway, TLSPolicy, HTTPRoute, AuthPolicy, Kafka, certificados de dispositivo, telemetría</td></tr>
+        <tr><td><code>oilgas-edge</code></td><td>este patrón</td><td>VMs de campo, VM kiosco, Secrets de cloud-init, certificados de dispositivo proyectados</td></tr>
+        <tr><td><code>cert-manager</code></td><td>el template del clúster</td><td>Configuración de ClusterIssuer traída de <code>rhbk-cert</code></td></tr>
+        <tr><td><code>rhbk-operator</code></td><td>el template del clúster</td><td>El CR Keycloak <code>rhbk</code> existente, más el realm <code>oilgas</code> importado</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Estructura del repositorio</h3>
+    <pre><code>values-global.yaml                 # nombre del patrón + main.variant: hub
+pattern-metadata.yaml
+variants/hub/values-hub.yaml       # aplicaciones y suscripción a AMQ Streams
+charts/hub/control-room/           # Ignition 0.2.5 + SCC + Services GAN y HTTP
+charts/hub/oilgas-gateway/         # Gateway, TLSPolicy, HTTPRoute, AuthPolicy
+charts/hub/oilgas-identity/        # realm oilgas, client ignition-hmi
+charts/hub/device-certs/           # oilgas-device-ca, PushSecret, ExternalSecret
+charts/hub/mock-devices/           # registro del Programmable Device Simulator
+charts/hub/kafka/                  # clúster KRaft de un nodo y tópicos
+charts/hub/device-events/          # publicador de eventos de dispositivo
+charts/hub/telemetry/              # Istio Telemetry + dashboard de Grafana
+charts/hub/device-edge/            # VMs de campo, cloud-init de MicroShift, kiosco
+values-secret.yaml.template
+docs/sizing.md</code></pre>
+  </section>
+
+  <section id="applications">
+    <h2>Aplicaciones y orden de sincronización</h2>
+    <p>
+      Argo CD aplica los charts en orden de sync wave. El orden no es cosmético: <code>device-edge</code> renderiza
+      cloud-init leyendo Secrets que crean las waves anteriores, así que tiene que ir al final.
+    </p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Wave</th><th>Aplicación</th><th>Namespace</th><th>Qué hace</th></tr></thead>
+      <tbody>
+        <tr><td><code>5</code></td><td><strong>cert-manager-config</strong></td><td><code>cert-manager</code></td><td>Traída de <a href="https://github.com/maximilianoPizarro/rhbk-cert">rhbk-cert</a> con ACME apagado y self-signed encendido. Crea la CA de laboratorio.</td></tr>
+        <tr><td><code>6</code></td><td><strong>oilgas-identity</strong></td><td><code>rhbk-operator</code></td><td>KeycloakRealmImport del realm <code>oilgas</code> y del client público <code>ignition-hmi</code>.</td></tr>
+        <tr><td><code>7</code></td><td><strong>device-certs</strong></td><td><code>oilgas</code></td><td>ClusterIssuer <code>oilgas-device-ca</code>, un Certificate por sitio, PushSecret a Vault y ExternalSecret de vuelta al borde.</td></tr>
+        <tr><td><code>8</code></td><td><strong>oilgas-gateway</strong></td><td><code>oilgas</code></td><td>Gateway de Istio, TLSPolicy, HTTPRoute y la AuthPolicy de JWT.</td></tr>
+        <tr><td><code>9</code></td><td><strong>kafka</strong></td><td><code>oilgas</code></td><td>Clúster KRaft de un nodo <code>oilgas</code> sobre Kafka 4.1.0, cuatro tópicos, ServiceMonitor del exporter JMX.</td></tr>
+        <tr><td><code>10</code></td><td><strong>control-room</strong></td><td><code>ignition</code></td><td>Ignition 8.3 Standard, SCC <code>ignition</code>, Service GAN <code>:8060</code>, Service HTTP <code>:8088</code>.</td></tr>
+        <tr><td><code>15</code></td><td><strong>mock-devices</strong></td><td><code>ignition</code></td><td>Job que publica tres Programmable Device Simulator contra la API de configuración.</td></tr>
+        <tr><td><code>16</code></td><td><strong>device-events</strong></td><td><code>oilgas</code></td><td>Publicador que escribe una muestra cada 5 s a los tópicos por sitio y a <code>oilgas.devices.events</code>.</td></tr>
+        <tr><td><code>17</code></td><td><strong>telemetry</strong></td><td><code>oilgas</code></td><td>Istio Telemetry para <code>ignition</code> y <code>oilgas</code>, más el GrafanaDashboard.</td></tr>
+        <tr><td><code>20</code></td><td><strong>device-edge</strong></td><td><code>oilgas-edge</code></td><td>Tres VMs de campo con cloud-init de MicroShift, más la VM kiosco con Firefox.</td></tr>
+      </tbody>
+    </table>
+    </div>
+
+    <h3>Suscripciones de operadores</h3>
+    <p>
+      Kafka es el único operador que este patrón suscribe, porque es el único que el template de Field Content
+      no provee ya.
+    </p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Operador</th><th>Namespace</th><th>Canal</th><th>Source</th></tr></thead>
+      <tbody>
+        <tr><td><strong>AMQ Streams</strong></td><td><code>openshift-operators</code></td><td><code>stable</code></td><td><code>redhat-operators</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      <code>kubevirt-hyperconverged</code> está en <code>variants/hub/values-hub.yaml</code> pero comentado. Hay que
+      descomentarlo, y poner <code>cnv.enabled=true</code> en <code>device-edge</code>, solo en un clúster que todavía no
+      tenga OpenShift Virtualization. Aplicar un segundo HyperConverged sobre el clúster del template es la
+      forma de romperlo.
+    </p>
+  </section>
+
+  <section id="gateway-network">
+    <h2>Gateway Network</h2>
+    <figure>
+      <img src="../images/gateway-network-es.png" alt="Cuatro pasos de arranque: control-room crea el oilgas-gan-issuer con cert-manager, el Service control-room-gan expone el puerto 8060, cloud-init escribe la CA y el certificado del sitio en el guest, e Ignition Edge sobre MicroShift abre una conexión saliente." />
+      <figcaption>device-edge sincroniza al final. Hay que volver a sincronizarlo cuando el issuer y el ExternalSecret del sitio estén Ready, o cloud-init escribe marcadores.</figcaption>
+    </figure>
+
+    <ol>
+      <li><code>control-room</code> habilita <code>certManager</code> y crea el issuer compartido <code>oilgas-gan-issuer</code>.</li>
+      <li>El Service <code>control-room-gan</code> expone el puerto <code>8060</code> a los guests, y el Service <code>control-room-http</code> expone <code>8088</code> a la HTTPRoute. Ambos existen porque el Service que crea el chart upstream es headless, lo que lo vuelve un backend pobre para el Gateway y un DNS pobre para una VM.</li>
+      <li><code>device-edge</code> renderiza cloud-init copiando la CA del issuer y el certificado de cliente de ese sitio en <code>/etc/oilgas</code> del guest.</li>
+      <li>Cada guest instala Ignition Edge sobre MicroShift con una conexión saliente a <code>control-room-gan.ignition.svc.cluster.local:8060</code>.</li>
+    </ol>
+
+    <div class="callout">
+      <strong>El orden importa.</strong> cloud-init se renderiza con un <code>lookup</code> de Helm. Si
+      <code>device-edge</code> sincroniza antes de que existan el Secret del issuer y el ExternalSecret del sitio, el
+      guest recibe un marcador comentado en lugar de un certificado. Hay que volver a sincronizar
+      <code>device-edge</code> y el próximo arranque de la VM toma el material real; sobre una VM que ya está
+      corriendo, se vuelve a ejecutar <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>.
+    </div>
+
+    <h3>En el guest</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Ruta</th><th>Contenido</th></tr></thead>
+      <tbody>
+        <tr><td><code>/etc/oilgas/site.env</code></td><td>Nombre del sitio, host y puerto GAN de la sala de control, coordenadas del chart de Ignition</td></tr>
+        <tr><td><code>/etc/oilgas/gan-ca.crt</code></td><td>CA de <code>oilgas-gan-issuer</code>, también agregada al trust store del guest</td></tr>
+        <tr><td><code>/etc/oilgas/device.crt</code>, <code>device.key</code>, <code>device-ca.crt</code></td><td>Certificado de cliente del sitio emitido por <code>oilgas-device-ca</code></td></tr>
+        <tr><td><code>/etc/oilgas/mock-device.json</code></td><td>Definición del Programmable Device Simulator de este sitio</td></tr>
+        <tr><td><code>/etc/oilgas/api-token</code></td><td>Token de la API de Ignition. Hay que crearlo y volver a correr el script de bootstrap.</td></tr>
+        <tr><td><code>/usr/local/bin/oilgas-bootstrap-edge.sh</code></td><td>Instala MicroShift, despliega Ignition Edge y registra el simulador. Es idempotente.</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      Podman queda instalado en el guest solo como herramienta de imágenes. Ignition Edge corre sobre MicroShift,
+      desplegado con el mismo chart <code>charts.ia.io/ignition</code> que la sala de control, en edición
+      <code>edge</code>.
+    </p>
+  </section>
+
+  <section id="certificates">
+    <h2>Certificados</h2>
+    <figure>
+      <img src="../images/certificate-planes-es.png" alt="Tres planos de certificados: operadores servidos por una TLSPolicy en el gateway, gateways de Ignition servidos por el oilgas-gan-issuer, y dispositivos de campo servidos por el ClusterIssuer oilgas-device-ca a través de Vault y External Secrets." />
+      <figcaption>Los planos no comparten nada. Una falla en uno no se lleva puestos a los otros dos.</figcaption>
+    </figure>
+
+    <h3>Operadores</h3>
+    <p>
+      Una TLSPolicy sobre el Gateway delega el ciclo de vida del certificado a cert-manager, y el realm
+      <code>oilgas</code> protege la HMI. La vigencia es de <code>2160h</code> con <code>renewBefore: 360h</code>: 90 días,
+      renovado 15 días antes.
+    </p>
+    <div class="callout">
+      <strong>El nombre del issuer miente, a propósito.</strong> <code>cert-manager-config</code> se despliega con
+      <code>acme.enabled=false</code> y <code>selfSigned.enabled=true</code>, pero el chart upstream igual nombra al
+      ClusterIssuer <code>letsencrypt-prod</code>. Es una CA interna, no Let's Encrypt. Conservar el nombre evita
+      tener que cambiar el <code>issuerRef</code> de la TLSPolicy entre un laboratorio y un clúster público.
+    </div>
+
+    <h3>Gateways de Ignition</h3>
+    <p>
+      La sala de control es dueña de <code>oilgas-gan-issuer</code>. Cada gateway de borde confía en la CA detrás de
+      él, que es lo que hace que la conexión de Gateway Network en <code>:8060</code> sea mutua y no apenas cifrada.
+    </p>
+
+    <h3>Dispositivos de campo</h3>
+    <p>
+      Un ClusterIssuer dedicado, <code>oilgas-device-ca</code>, emite un certificado <code>client auth</code> por sitio
+      con clave ECDSA P-256. External Secrets empuja cada uno a Vault en <code>oilgas/devices/&lt;sitio&gt;</code> y un
+      ExternalSecret lo proyecta de vuelta a <code>oilgas-edge</code>, donde cloud-init puede leerlo. El intervalo de
+      refresco es de una hora.
+    </p>
+    <pre><code>oc get clusterissuer oilgas-device-ca
+oc get certificate -n oilgas
+oc get pushsecret -n oilgas
+oc get externalsecret -n oilgas-edge</code></pre>
+    <p>
+      cert-manager lee los Secrets de CA de un ClusterIssuer desde su propio namespace, por eso
+      <code>ca.namespace</code> es <code>cert-manager</code> y no <code>oilgas</code>.
+    </p>
+  </section>
+
+  <section id="identity">
+    <h2>Identidad y la puerta pública</h2>
+    <p>
+      <code>oilgas-identity</code> no despliega Keycloak. Importa un realm dentro del CR Keycloak llamado
+      <code>rhbk</code> que el template del clúster ya ejecuta, de modo que el patrón agrega un límite de identidad
+      sin ser dueño de un proveedor de identidad.
+    </p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Objeto</th><th>Valor</th></tr></thead>
+      <tbody>
+        <tr><td>Realm</td><td><code>oilgas</code> &mdash; display name "Oil and Gas", <code>sslRequired: external</code>, autoregistro apagado</td></tr>
+        <tr><td>Client</td><td><code>ignition-hmi</code> &mdash; público, standard flow y direct access grants encendidos, implicit flow apagado</td></tr>
+        <tr><td>Redirect URI</td><td><code>https://ignition.&lt;cluster-domain&gt;/*</code></td></tr>
+        <tr><td>Gateway</td><td><code>oilgas-gateway</code>, gatewayClassName <code>istio</code>, hostname <code>ignition.&lt;cluster-domain&gt;</code></td></tr>
+        <tr><td>Backend</td><td><code>control-room-http.ignition:8088</code></td></tr>
+        <tr><td>AuthPolicy</td><td><code>kuadrant.io/v1</code>, apunta a la HTTPRoute <code>ignition</code>, JWT de <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code> con prefijo <code>Bearer</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      La Route de OpenShift que el chart de Ignition crearía está deshabilitada
+      (<code>ignition.ingress.enabled=false</code>). El gateway es la única entrada, y un pedido sin un token Bearer
+      válido no llega a la UI del Gateway.
+    </p>
+  </section>
+
+  <section id="events">
+    <h2>Eventos de dispositivo y telemetría</h2>
+    <figure>
+      <img src="../images/data-flow-es.png" alt="Las muestras del simulador de dispositivos fluyen por el publicador device-events hacia el clúster Kafka de un nodo y sus cuatro tópicos, mientras la telemetría de Istio alimenta el dashboard compartido de Grafana." />
+      <figcaption>La imagen estándar de Ignition no trae módulo de Kafka, así que device-events es el puente que almacena cada muestra.</figcaption>
+    </figure>
+
+    <p>
+      <code>device-events</code> es un Deployment pequeño que reutiliza la imagen de Kafka de AMQ Streams que el
+      broker ya descarga (<code>registry.redhat.io/amq-streams/kafka-41-rhel9</code>, fijada por digest porque el
+      operador no publica un tag <code>4.1.0</code>). Cada <strong>5 segundos</strong> emite una muestra por tag, con los mismos nombres de tag que usan los
+      simuladores, al tópico de ese sitio y al tópico de eventos compartido. Los valores oscilan localmente, así
+      que la historia sigue acumulándose aunque nadie tenga la HMI abierta.
+    </p>
+    <pre><code>{"site":"wellpad-north","device":"wellpad-north","tag":"wellhead-pressure","value":1463.2,"ts":"2026-11-24T12:00:05Z"}</code></pre>
+
+    <h3>Tópicos</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Tópico</th><th>Transporta</th></tr></thead>
+      <tbody>
+        <tr><td><code>oilgas.devices.wellpad-north</code></td><td>wellhead-pressure, flow-rate, tank-level</td></tr>
+        <tr><td><code>oilgas.devices.compressor-station</code></td><td>suction-pressure, discharge-pressure, vibration</td></tr>
+        <tr><td><code>oilgas.devices.pipeline-segment</code></td><td>line-pressure, temperature, leak-indicator</td></tr>
+        <tr><td><code>oilgas.devices.events</code></td><td>Todas las muestras de todos los sitios</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      El clúster es un Kafka 4.1.0 <strong>KRaft de un solo nodo</strong> con un volumen <code>gp3-csi</code> de 20 GiB,
+      dimensionado para una demostración y no para durabilidad productiva. Un ServiceMonitor raspa el exporter
+      JMX.
+    </p>
+
+    <h3>Observabilidad</h3>
+    <p>
+      <code>telemetry</code> conserva las métricas de tasa de pedidos y latencia de Istio para los namespaces
+      <code>ignition</code> y <code>oilgas</code>, y carga un GrafanaDashboard llamado <code>oil-and-gas-edge</code> en la
+      instancia de Grafana que el template del clúster ya ejecuta
+      (<code>openshift-cluster-observability-operator</code>, selector de instancia
+      <code>dashboards: grafana-observability</code>). No se instala un segundo Grafana.
+    </p>
+    <pre><code>oc run kafka-consume -n oilgas --rm -it --restart=Never \
+  --image=quay.io/strimzi/kafka:0.45.0 -- \
+  /opt/kafka/bin/kafka-console-consumer.sh \
+  --bootstrap-server oilgas-kafka-bootstrap:9092 \
+  --topic oilgas.devices.wellpad-north \
+  --from-beginning --max-messages 1</code></pre>
+  </section>
+
+  <section id="sizing">
+    <h2>Dimensionamiento del clúster</h2>
+    <p>
+      El clúster se pide con el template de Field Content. Los números de abajo son lo que realmente necesitan
+      las tres VMs de campo, el kiosco, Ignition y Kafka; no son un piso teórico.
+    </p>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Recurso</th><th>Pedido</th><th>Nota</th></tr></thead>
+      <tbody>
+        <tr><td>OpenShift</td><td>4.20, o la versión del template</td><td>Necesita OpenShift Virtualization con host CPU passthrough</td></tr>
+        <tr><td>Control plane</td><td>3 &times; 8 vCPU / 32 GiB (<code>m5a.2xlarge</code>)</td><td>&mdash;</td></tr>
+        <tr><td>Workers</td><td>3 &times; 16 vCPU / 64 GiB (<code>m5a.4xlarge</code>)</td><td>Conviene <code>m5a.8xlarge</code> si el catálogo lo ofrece. <code>m5a.4xlarge</code> es el mínimo y el margen queda justo.</td></tr>
+        <tr><td>Almacenamiento</td><td>RWO <code>gp3-csi</code>, 500 GiB libres</td><td>Cada VM de campo son 80 GiB de raíz más 40 GiB de datos</td></tr>
+        <tr><td>DNS</td><td>Wildcard <code>*.apps.&lt;cluster-domain&gt;</code></td><td>El issuer self-signed evita necesitar Route 53</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Carga</th><th>CPU</th><th>Memoria</th><th>Disco</th></tr></thead>
+      <tbody>
+        <tr><td>VM de campo &times; 3</td><td>4 vCPU</td><td>16 GiB</td><td>80 GiB raíz + 40 GiB datos</td></tr>
+        <tr><td><code>hmi-kiosk</code></td><td>2 vCPU</td><td>4 GiB</td><td>40 GiB</td></tr>
+        <tr><td>Ignition sala de control</td><td>1 &rarr; 4</td><td>2 &rarr; 8 GiB</td><td>20 GiB</td></tr>
+        <tr><td>Kafka</td><td>1 &rarr; 2</td><td>2 &rarr; 4 GiB</td><td>20 GiB</td></tr>
+      </tbody>
+    </table>
+    </div>
+    <p>
+      Son 52 GiB de memoria de VMs antes del límite de Ignition. Con menos de tres workers las tres VMs de campo
+      no entran a la vez. El detalle completo está en
+      <a href="https://github.com/maximilianoPizarro/oil-and-gas-edge/blob/main/docs/sizing.md">docs/sizing.md</a>.
+    </p>
+  </section>
+
+  <section id="install">
+    <h2>Instalación</h2>
+    <p>Antes que nada, confirmar el dominio del clúster y el secret store:</p>
+    <pre><code>oc get ingresses.config.openshift.io cluster -o jsonpath='{.spec.domain}{"\n"}'
+oc get clustersecretstore</code></pre>
+    <p>
+      Los charts esperan un ClusterSecretStore llamado <code>vault-backend</code>. Si el template lo nombró
+      distinto, hay que sobreescribirlo en <code>device-certs</code> y <code>mock-devices</code>.
+    </p>
+
+    <pre><code>git clone https://github.com/maximilianoPizarro/oil-and-gas-edge.git
+cd oil-and-gas-edge
+cp values-secret.yaml.template ~/values-secret-oil-and-gas-edge.yaml
+
+# Completar rhel-guest-image.url ahora, e ignition-api.token después del commissioning
+./pattern.sh make install</code></pre>
+
+    <h3>Secretos</h3>
+    <div class="table-wrap">
+    <table>
+      <thead><tr><th>Secreto</th><th>Campo</th><th>Si falta</th><th>Lo usa</th></tr></thead>
+      <tbody>
+        <tr><td><code>ignition-admin</code></td><td><code>gateway-admin-password</code></td><td>generate</td><td>Login de admin del Gateway de sala de control</td></tr>
+        <tr><td><code>ignition-api</code></td><td><code>token</code></td><td>prompt</td><td>Registro de simuladores contra la API de configuración</td></tr>
+        <tr><td><code>rhel-guest-image</code></td><td><code>url</code></td><td>prompt</td><td>Origen del DataVolume de las VMs de campo</td></tr>
+        <tr><td><code>keycloak-initial-admin</code></td><td><code>username</code>, <code>password</code></td><td>generate</td><td>Solo si se descomenta la aplicación <code>rhbk-cert</code></td></tr>
+        <tr><td><code>keycloak-db-secret</code></td><td><code>username</code>, <code>password</code></td><td>generate</td><td>Solo si se descomenta la aplicación <code>rhbk-cert</code></td></tr>
+      </tbody>
+    </table>
+    </div>
+    <div class="callout">
+      <strong>El token de la API es de dos tiempos.</strong> No existe hasta que el Gateway fue comisionado. Se
+      instala, se espera a que levante la sala de control, se crea el token en el Gateway, se guarda en Vault bajo
+      <code>ignition-api/token</code>, y el Job <code>register-mock-devices</code> va a tener éxito en alguno de sus
+      reintentos: el <code>backoffLimit</code> es 30, así que espera.
+    </div>
+
+    <h3>Abrir la HMI</h3>
+    <pre><code># URL del operador
+echo "https://ignition.$(oc get ingresses.config.openshift.io cluster -o jsonpath='{.spec.domain}')"
+
+# Contraseña de admin del Gateway
+oc get secret -n ignition control-room-gateway-admin-password \
+  --template='{{ printf "%s\n" (index .data "gateway-admin-password" | base64decode) }}'</code></pre>
+    <p>
+      Grafana está en <code>https://grafana-observability.&lt;cluster-domain&gt;</code>: en el template de Field
+      Content, usuario <code>admin</code>, contraseña <code>openshift</code>. El dashboard se llama
+      <code>oil-and-gas-edge</code>.
+    </p>
+  </section>
+
+  <section id="verify">
+    <h2>Verificación</h2>
+    <p>Que Argo CD diga Synced no es la línea de llegada. Conviene recorrer esta lista antes de dar la instalación por terminada.</p>
+    <pre><code>oc get applications -A
+oc get clusterissuer
+oc get certificate -A
+oc get gateway,httproute,authpolicy,tlspolicy -n oilgas
+oc get kafka,kafkatopic -n oilgas
+oc get pods -n ignition
+oc get vm -n oilgas-edge
+oc get externalsecret,pushsecret -A</code></pre>
+    <ul>
+      <li><code>oilgas-device-ca</code> está Ready, y también el issuer de laboratorio que <code>cert-manager-config</code> creó bajo el nombre <code>letsencrypt-prod</code>.</li>
+      <li>Hay un Certificate por sitio: <code>wellpad-north</code>, <code>compressor-station</code>, <code>pipeline-segment</code>.</li>
+      <li>El Gateway está <code>Programmed</code>, y la HTTPRoute, la AuthPolicy y la TLSPolicy están aceptadas.</li>
+      <li><code>curl -k https://ignition.&lt;cluster-domain&gt;</code> <em>no</em> devuelve la UI de Ignition sin un token Bearer del realm <code>oilgas</code>. Si la devuelve, la AuthPolicy no está enganchada.</li>
+      <li>Los pods de <code>ignition</code> están <code>1/1</code> y existe el Secret <code>control-room-gateway-admin-password</code>.</li>
+      <li>Las tres VMs de campo y <code>hmi-kiosk</code> están Running en <code>oilgas-edge</code>.</li>
+      <li>En la UI de Ignition, en <strong>Connections &rarr; Devices</strong>, los tres simuladores figuran Running.</li>
+      <li>En <strong>Config &rarr; Networking &rarr; Gateway Network</strong> aparecen las tres conexiones entrantes de los gateways MicroShift.</li>
+      <li>En cada gateway de borde, <strong>Connections &rarr; Devices</strong> muestra solo el simulador de ese sitio.</li>
+      <li>Un consumidor lee al menos un evento JSON de <code>oilgas.devices.wellpad-north</code>.</li>
+      <li>El dashboard <code>oil-and-gas-edge</code> de Grafana muestra tasa y latencia de la HTTPRoute, y mensajes por tópico.</li>
+    </ul>
+  </section>
+
+  <section id="troubleshooting">
+    <h2>Resolución de problemas</h2>
+
+    <h3>register-mock-devices falla una y otra vez</h3>
+    <p>
+      El Job termina con 1 cuando el archivo del token está vacío. Ese es el estado esperado antes de crear el
+      token. Hay que guardarlo en Vault bajo <code>ignition-api/token</code>, confirmar que el ExternalSecret produjo
+      <code>control-room-ignition-api-token</code> en el namespace <code>ignition</code>, y dejar que el Job reintente.
+      Un <code>409</code> de la API se toma como éxito: el dispositivo ya existe.
+    </p>
+    <pre><code>oc logs -n ignition job/register-mock-devices
+oc get secret -n ignition control-room-ignition-api-token</code></pre>
+
+    <h3>Un sitio de campo nunca aparece en el Gateway Network</h3>
+    <p>
+      Hay que entrar al guest y leer la salida del bootstrap. El script es deliberadamente tolerante: un RPM de
+      MicroShift faltante, una instalación de Helm diferida y un certificado ausente son WARN y no una falla
+      dura, así que la VM queda levantada y se puede arreglar en el lugar.
+    </p>
+    <pre><code>virtctl console -n oilgas-edge wellpad-north
+sudo grep oilgas /var/log/messages
+sudo /usr/local/bin/oilgas-bootstrap-edge.sh</code></pre>
+
+    <h3>cloud-init escribió marcadores</h3>
+    <p>
+      Si <code>/etc/oilgas/device.crt</code> contiene un comentario en lugar de un certificado, <code>device-edge</code>
+      renderizó antes de que <code>device-certs</code> terminara. Hay que volver a sincronizar <code>device-edge</code>
+      en Argo CD y después correr de nuevo el script de bootstrap en el guest. Lo mismo vale para
+      <code>/etc/oilgas/gan-ca.crt</code> y el issuer de GAN.
+    </p>
+
+    <h3>La HMI responde sin token</h3>
+    <p>
+      Hay que verificar que la AuthPolicy esté enganchada a la HTTPRoute llamada <code>ignition</code>, y que
+      <code>oidc.issuerURL</code> resuelva. Una AuthPolicy cuyo target no existe queda aceptada pero no aplica nada.
+    </p>
+    <pre><code>oc describe authpolicy ignition-oidc -n oilgas
+curl -sk https://rhbk.&lt;cluster-domain&gt;/realms/oilgas/.well-known/openid-configuration | head</code></pre>
+
+    <h3>El pod de Ignition no arranca</h3>
+    <p>
+      El contenedor corre como UID/GID 2003. El chart <code>control-room</code> crea la SCC <code>ignition</code> y un
+      ClusterRoleBinding para ella. Si el pod queda trabado en un error de security context, la SCC no se aplicó
+      o la service account no está asociada a ella.
+    </p>
+
+    <h3>Un release de Helm viejo</h3>
+    <p>
+      Un release <code>ignition</code> que haya quedado de una instalación manual no es este patrón. El release del
+      patrón se llama <code>control-room</code>. Conviene borrar el viejo antes de instalar.
+    </p>
+  </section>
+
+  <section id="operations">
+    <h2>Operación</h2>
+
+    <h3>Actualizar</h3>
+    <p>
+      Se hace merge a <code>main</code>. La Application del hub sigue esa rama y reconcilia. Hay que esperar a que
+      <code>oc get applications -A</code> vuelva a Synced antes de dar el rollout por terminado.
+    </p>
+
+    <h3>Volver atrás</h3>
+    <p>
+      Se revierte el commit, o se apunta el <code>targetRevision</code> del Pattern al anterior. Este patrón no hace
+      backup de los Secrets de certificados: cert-manager los vuelve a emitir desde los objetos Certificate, así
+      que un Secret borrado vuelve y un Certificate borrado no, hasta que Git lo restaure.
+    </p>
+
+    <h3>Desinstalar</h3>
+    <pre><code>./pattern.sh make uninstall</code></pre>
+    <p>
+      El rol de desinstalación de Validated Patterns está marcado como experimental upstream. Quita lo que el
+      Pattern creó. No vacía Vault, y no borra por vos los volúmenes de datos de las VMs: conviene revisar
+      <code>oc get dv,pvc -n oilgas-edge</code> después.
+    </p>
+
+    <h3>Agregar un cuarto sitio</h3>
+    <p>
+      Tres charts necesitan el nombre nuevo, y lo necesitan idéntico, porque la sala de control y el gateway de
+      borde registran el simulador con el mismo nombre:
+    </p>
+    <pre><code># charts/hub/device-certs/values.yaml
+sites:
+  - name: tank-farm
+    commonName: tank-farm.oilgas.local
+
+# charts/hub/device-edge/values.yaml
+sites:
+  - name: tank-farm
+    displayName: Tank Farm
+    description: Storage tank farm Device Edge site
+    program: |
+      0,tank-level,62,Good
+      5000,tank-level,64,Good
+
+# charts/hub/kafka/values.yaml
+topics:
+  - oilgas.devices.tank-farm</code></pre>
+    <p>
+      Después hay que agregar las entradas equivalentes en <code>charts/hub/mock-devices/values.yaml</code> y
+      <code>charts/hub/device-events/values.yaml</code>. El ClusterIssuer, el Gateway y el realm ya lo cubren: no hace
+      falta configurar nada de certificados ni de identidad.
+    </p>
+  </section>
+
+  <section id="faq">
+    <h2>Límites y preguntas frecuentes</h2>
+
+    <h3>¿Está listo para producción?</h3>
+    <p>
+      No. Es un patrón de <strong>nivel sandbox</strong>. Kafka es un solo nodo, Ignition es una sola instancia, los
+      "sitios" de campo son simuladores y la CA de laboratorio es self-signed. Demuestra la topología y el
+      cableado GitOps, no un despliegue resiliente.
+    </p>
+
+    <h3>¿Puede correr en un clúster sin el template de Field Content?</h3>
+    <p>
+      Sí, con trabajo. Habría que instalar a mano GitOps, cert-manager, External Secrets, Vault, Service Mesh,
+      Connectivity Link, Red Hat build of Keycloak, OpenShift Virtualization y Grafana, descomentar la aplicación
+      <code>rhbk-cert</code> y la suscripción <code>kubevirt-hyperconverged</code>, y poner <code>cnv.enabled=true</code>
+      en <code>device-edge</code>.
+    </p>
+
+    <h3>¿Por qué hay un publicador aparte para Kafka?</h3>
+    <p>
+      La imagen estándar de Ignition no trae ningún módulo de Kafka. En lugar de construir una imagen
+      personalizada, el patrón corre un publicador pequeño al lado. Y es honesto sobre lo que es: las muestras
+      que escribe espejan los nombres y los rangos de los tags del simulador, no se leen del Gateway.
+    </p>
+
+    <h3>¿La VM kiosco corre Ignition?</h3>
+    <p>
+      No. <code>hmi-kiosk</code> corre Firefox apuntando a la URL del gateway. Existe para poder demostrar el camino
+      del operador desde dentro del clúster, sin necesidad de una estación de trabajo que confíe en la CA de
+      laboratorio.
+    </p>
+
+    <h3>¿Participa Ansible Automation Platform?</h3>
+    <p>
+      No. GitOps reemplaza el push de unidades Podman que usaba
+      <a href="https://github.com/maximilianoPizarro/hmi-demo">hmi-demo</a>. Podman queda en el guest solo como
+      herramienta de imágenes.
+    </p>
+  </section>
+
+</div>
+</div>
+
+<footer>
+  <p>
+    <strong>oil-and-gas-edge</strong> v0.2 &middot;
+    <a href="https://github.com/maximilianoPizarro/oil-and-gas-edge">GitHub</a> &middot;
+    <a href="https://github.com/maximilianoPizarro/oil-and-gas-edge/issues">Issues</a> &middot;
+    <a href="https://github.com/maximilianoPizarro/oil-and-gas-edge/blob/main/docs/sizing.md">Dimensionamiento</a> &middot;
+    <a href="https://github.com/maximilianoPizarro/rhbk-cert">rhbk-cert</a> &middot;
+    <a href="https://validatedpatterns.io">Validated Patterns</a> &middot;
+    <a href="../">English</a> &middot;
+    Licencia Apache 2.0
+  </p>
+  <p style="margin-top:8px;">Mantenido por <a href="https://github.com/maximilianoPizarro">Maximiliano Pizarro</a></p>
+</footer>
+
+<script>
+(function () {
+  var copyLabel = document.body.getAttribute("data-copy") || "Copy";
+  var copiedLabel = document.body.getAttribute("data-copied") || "Copied";
+  document.querySelectorAll(".container table").forEach(function (table) {
+    if (table.parentElement.classList.contains("table-wrap")) return;
+    var wrap = document.createElement("div");
+    wrap.className = "table-wrap";
+    table.parentNode.insertBefore(wrap, table);
+    wrap.appendChild(table);
+  });
+  document.querySelectorAll("pre").forEach(function (pre) {
+    var btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "copy-btn";
+    btn.textContent = copyLabel;
+    btn.addEventListener("click", function () {
+      var code = pre.querySelector("code");
+      var text = code ? code.innerText : pre.innerText;
+      var done = function () {
+        btn.textContent = copiedLabel;
+        setTimeout(function () { btn.textContent = copyLabel; }, 1500);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(text).then(done);
+      } else {
+        var area = document.createElement("textarea");
+        area.value = text;
+        document.body.appendChild(area);
+        area.select();
+        document.execCommand("copy");
+        area.remove();
+        done();
+      }
+    });
+    pre.appendChild(btn);
+  });
+})();
+</script>
+
+</body>
+</html>

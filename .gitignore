@@ -8,3 +8,6 @@ pattern-vault.init
 vault.init
 super-linter.log
 common/pattern-vault.init
+
+# Diagram renderer cache (fonts and generated HTML)
+tools/diagrams/.cache/

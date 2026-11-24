@@ -6,7 +6,7 @@ description: >-
   cluster, the four device topics, and a ServiceMonitor for the JMX exporter.
 type: application
 version: 0.1.0
-appVersion: "3.9.0"
+appVersion: "4.1.0"
 keywords:
   - kafka
   - amq-streams

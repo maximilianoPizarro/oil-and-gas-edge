@@ -1,6 +1,7 @@
 cluster:
   name: oilgas
-  version: 3.9.0
+  # AMQ Streams stable (3.2) ships Kafka 4.1 and 4.2 only.
+  version: 4.1.0
   replicas: 1
   storage:
     size: 20Gi
