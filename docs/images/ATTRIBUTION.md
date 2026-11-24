@@ -28,8 +28,11 @@ a gitignored cache rather than vendored here.
 
 `logo.svg` is original to this repository.
 
-`cover.png` is a synthesised illustration, used only as the page header backdrop and as the social
-card image. It carries no text and depicts no real site or equipment. The hero treats it as optional:
-if the file is absent the browser skips that background layer and the base gradient shows through.
+`cover.png` is a synthesised illustration used as the page header backdrop. It carries no text and
+depicts no real site or equipment. The hero treats it as optional: if the file is absent the browser
+skips that background layer and the base gradient shows through.
+
+`og.jpg` is a 1200×630 JPEG cropped from `cover.png`. The social tags point at it because the PNG
+is too large for link previews. The hero keeps using `cover.png`.
 
 These names are trademarks of their owners.
