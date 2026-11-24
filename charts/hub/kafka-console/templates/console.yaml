@@ -1,0 +1,21 @@
+apiVersion: console.streamshub.github.com/v1alpha1
+kind: Console
+metadata:
+  name: {{ .Values.name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/name: kafka-console
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "2"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  hostname: {{ .Values.hostname | quote }}
+  metricsSources:
+    - name: {{ .Values.metrics.name }}
+      type: {{ .Values.metrics.type }}
+  kafkaClusters:
+    - name: {{ .Values.cluster.name }}
+      namespace: {{ .Values.cluster.namespace }}
+      listener: {{ .Values.cluster.listener }}
+      metricsSource: {{ .Values.metrics.name }}

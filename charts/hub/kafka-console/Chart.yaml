@@ -1,0 +1,6 @@
+apiVersion: v2
+name: kafka-console
+description: Streams for Apache Kafka Console for the oilgas cluster.
+type: application
+version: 0.1.0
+appVersion: "3.2.2"

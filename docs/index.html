@@ -487,6 +487,8 @@ oc get externalsecret -n oilgas-edge</code></pre>
     <p>
       The cluster is a <strong>single-node KRaft</strong> Kafka 4.1.0 with a 20 GiB <code>gp3-csi</code> volume, sized for
       a demonstration and not for production durability. A ServiceMonitor scrapes the JMX exporter.
+      The Streams console is a separate operator from the broker (<code>amq-streams-console</code>, channel <code>stable</code>).
+      It reads listener <code>plain</code> and does not create a Kafka user. User-workload monitoring must be enabled or the metrics pane stays empty. The four topics still appear without it.
     </p>
 
     <h3>Observability</h3>

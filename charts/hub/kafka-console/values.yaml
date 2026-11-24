@@ -1,0 +1,9 @@
+name: oilgas
+hostname: kafka-console.apps.cluster.example.com
+cluster:
+  name: oilgas
+  namespace: oilgas
+  listener: plain
+metrics:
+  name: openshift-monitoring
+  type: openshift-monitoring

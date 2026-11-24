@@ -21,6 +21,13 @@ clusterGroup:
       source: redhat-operators
       sourceNamespace: openshift-marketplace
       installPlanApproval: Automatic
+    amq-streams-console:
+      name: amq-streams-console
+      namespace: openshift-operators
+      channel: stable
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      installPlanApproval: Automatic
     # OpenShift Virtualization is already installed by the template.
     # On a cluster without it, uncomment this subscription and set
     # device-edge cnv.enabled=true.
@@ -117,6 +124,16 @@ clusterGroup:
       argoProject: oilgas
       path: charts/hub/kafka
       syncWave: "9"
+
+    kafka-console:
+      name: kafka-console
+      namespace: oilgas
+      argoProject: oilgas
+      path: charts/hub/kafka-console
+      syncWave: "12"
+      overrides:
+        - name: hostname
+          value: 'kafka-console.{{ .Values.global.localClusterDomain }}'
 
     control-room:
       name: control-room

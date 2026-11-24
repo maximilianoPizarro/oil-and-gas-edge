@@ -492,6 +492,8 @@ oc get externalsecret -n oilgas-edge</code></pre>
       El clúster es un Kafka 4.1.0 <strong>KRaft de un solo nodo</strong> con un volumen <code>gp3-csi</code> de 20 GiB,
       dimensionado para una demostración y no para durabilidad productiva. Un ServiceMonitor raspa el exporter
       JMX.
+      La consola de Streams es un operador distinto del broker (<code>amq-streams-console</code>, canal <code>stable</code>).
+      Lee el listener <code>plain</code> y no crea un usuario de Kafka. El monitoreo de user-workload tiene que estar habilitado o el panel de métricas queda vacío. Los cuatro tópicos aparecen igual sin eso.
     </p>
 
     <h3>Observabilidad</h3>
