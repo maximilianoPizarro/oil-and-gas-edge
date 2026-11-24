@@ -356,6 +356,14 @@ docs/sizing.md</code></pre>
       <code>device-edge</code> y el próximo arranque de la VM toma el material real; sobre una VM que ya está
       corriendo, se vuelve a ejecutar <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>.
     </div>
+    <div class="callout">
+      <strong>Qué significa "conectado".</strong>
+      <ol>
+        <li>En el Ignition de sala de control, <strong>Config → Networking → Gateway Network</strong> lista una conexión entrante desde <code>wellpad-north</code> (y los otros sitios cuando sus VMs terminan el bootstrap). Esa fila es el dispositivo MicroShift. No requiere el token de API.</li>
+        <li><strong>Connections → Devices</strong> en ese gateway de borde muestra el simulador programable de ese sitio. El script del borde lo registra solo después de que exista <code>/etc/oilgas/api-token</code> en el guest. Hay que crear ese token en la UI del Gateway de borde y volver a correr <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>.</li>
+        <li>El Job del hub <code>register-mock-devices</code> registra los mismos tres simuladores en la sala de control. Sigue fallando hasta que Vault <code>ignition-api/token</code> esté cargado. Es una segunda vista de los mismos tags, no un reemplazo de la fila de Gateway Network.</li>
+      </ol>
+    </div>
 
     <h3>En el guest</h3>
     <div class="table-wrap">

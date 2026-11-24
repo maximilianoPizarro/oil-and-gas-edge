@@ -353,6 +353,14 @@ docs/sizing.md</code></pre>
       instead of a certificate. Re-sync <code>device-edge</code> and the next VM boot picks up the real material;
       on a VM that is already running, re-run <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>.
     </div>
+    <div class="callout">
+      <strong>What "connected" means.</strong>
+      <ol>
+        <li>In the control-room Ignition, <strong>Config → Networking → Gateway Network</strong> lists an incoming connection from <code>wellpad-north</code> (and the other sites once their VMs finish bootstrap). That row is the MicroShift device. It does not require the API token.</li>
+        <li><strong>Connections → Devices</strong> on that edge gateway shows the programmable simulator for that site. The edge script registers it only after <code>/etc/oilgas/api-token</code> exists on the guest. Create that token in the edge Gateway UI and re-run <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>.</li>
+        <li>The hub Job <code>register-mock-devices</code> registers the same three simulators on the control room. It stays failed until Vault <code>ignition-api/token</code> is set. That is a second view of the same tag names, not a substitute for the Gateway Network row.</li>
+      </ol>
+    </div>
 
     <h3>On the guest</h3>
     <div class="table-wrap">

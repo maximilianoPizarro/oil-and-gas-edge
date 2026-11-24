@@ -13,6 +13,7 @@ if printf '%s\n' "$out" | grep -q 'example.invalid'; then
 fi
 # Three field VMs, kiosk off.
 test "$(printf '%s\n' "$out" | grep -c 'kind: VirtualMachine')" -eq 3
+printf '%s\n' "$out" | grep -q 'GAN target control-room-gan.ignition.svc.cluster.local:8060'
 if helm template device-edge "$root/charts/hub/device-edge" --set kiosk.enabled=false >/dev/null 2>&1; then
   echo "empty image URL must fail the render" >&2
   exit 1
