@@ -186,6 +186,13 @@ clusterGroup:
       path: charts/hub/telemetry
       syncWave: "17"
 
+    mesh-console:
+      name: mesh-console
+      namespace: openshift-operators
+      argoProject: oilgas
+      path: charts/hub/mesh-console
+      syncWave: "18"
+
     device-edge:
       name: device-edge
       namespace: oilgas-edge

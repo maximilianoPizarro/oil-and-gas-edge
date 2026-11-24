@@ -1,0 +1,3 @@
+name: ossmconsole
+namespace: openshift-operators
+version: default

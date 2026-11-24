@@ -22,4 +22,10 @@ spec:
           match:
             metric: REQUEST_DURATION
             mode: CLIENT_AND_SERVER
+  {{- if $.Values.tracing.enabled }}
+  tracing:
+    - randomSamplingPercentage: {{ $.Values.tracing.randomSamplingPercentage }}
+      providers:
+        - name: {{ $.Values.tracing.providerName }}
+  {{- end }}
 {{- end }}

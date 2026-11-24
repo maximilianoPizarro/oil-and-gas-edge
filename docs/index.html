@@ -497,6 +497,9 @@ oc get externalsecret -n oilgas-edge</code></pre>
       <code>oilgas</code>, and loads a GrafanaDashboard named <code>oil-and-gas-edge</code> into the Grafana instance the
       cluster template already runs (<code>openshift-cluster-observability-operator</code>, instance selector
       <code>dashboards: grafana-observability</code>). No second Grafana is installed.
+      Kiali is the template's Kiali, shown inside the OpenShift console by <code>OSSMConsole</code> <code>ossmconsole</code>.
+      Traces are the mesh spans for namespaces <code>ignition</code> and <code>oilgas</code>, stored in the template Tempo.
+      This pattern does not install either operator.
     </p>
     <pre><code>oc run kafka-consume -n oilgas --rm -it --restart=Never \
   --image=quay.io/strimzi/kafka:0.45.0 -- \

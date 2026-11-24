@@ -9,3 +9,8 @@ grafana:
   name: oil-and-gas-edge
   instanceSelector:
     dashboards: grafana-observability
+
+tracing:
+  enabled: true
+  providerName: otel-tracing
+  randomSamplingPercentage: 1
