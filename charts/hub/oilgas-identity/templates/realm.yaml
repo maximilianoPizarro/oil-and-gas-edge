@@ -31,8 +31,11 @@ spec:
         directAccessGrantsEnabled: true
         redirectUris:
           - https://{{ .Values.realm.host }}/*
+          - https://{{ .Values.realm.host }}/auth/callback
         webOrigins:
           - https://{{ .Values.realm.host }}
+        attributes:
+          pkce.code.challenge.method: S256
         defaultClientScopes:
           - profile
           - email

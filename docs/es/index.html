@@ -303,7 +303,7 @@ docs/sizing.md</code></pre>
         <tr><td><code>5</code></td><td><strong>cert-manager-config</strong></td><td><code>cert-manager</code></td><td>Traída de <a href="https://github.com/maximilianoPizarro/rhbk-cert">rhbk-cert</a> con ACME apagado y self-signed encendido. Crea la CA de laboratorio.</td></tr>
         <tr><td><code>6</code></td><td><strong>oilgas-identity</strong></td><td><code>rhbk-operator</code></td><td>KeycloakRealmImport del realm <code>oilgas</code> y del client público <code>ignition-hmi</code>.</td></tr>
         <tr><td><code>7</code></td><td><strong>device-certs</strong></td><td><code>oilgas</code></td><td>ClusterIssuer <code>oilgas-device-ca</code>, un Certificate por sitio, PushSecret a Vault y ExternalSecret de vuelta al borde.</td></tr>
-        <tr><td><code>8</code></td><td><strong>oilgas-gateway</strong></td><td><code>oilgas</code></td><td>Gateway de Istio, TLSPolicy, HTTPRoute y la AuthPolicy de JWT.</td></tr>
+        <tr><td><code>8</code></td><td><strong>oilgas-gateway</strong></td><td><code>oilgas</code></td><td>Gateway de Istio, TLSPolicy, HTTPRoute y la OIDCPolicy <code>oilgas-login</code>.</td></tr>
         <tr><td><code>9</code></td><td><strong>kafka</strong></td><td><code>oilgas</code></td><td>Clúster KRaft de un nodo <code>oilgas</code> sobre Kafka 4.1.0, cuatro tópicos, ServiceMonitor del exporter JMX.</td></tr>
         <tr><td><code>10</code></td><td><strong>control-room</strong></td><td><code>ignition</code></td><td>Ignition 8.3 Standard, SCC <code>ignition</code>, Service GAN <code>:8060</code>, Service HTTP <code>:8088</code>.</td></tr>
         <tr><td><code>15</code></td><td><strong>mock-devices</strong></td><td><code>ignition</code></td><td>Job que publica tres Programmable Device Simulator contra la API de configuración.</td></tr>
@@ -434,17 +434,19 @@ oc get externalsecret -n oilgas-edge</code></pre>
       <tbody>
         <tr><td>Realm</td><td><code>oilgas</code> &mdash; display name "Oil and Gas", <code>sslRequired: external</code>, autoregistro apagado</td></tr>
         <tr><td>Client</td><td><code>ignition-hmi</code> &mdash; público, standard flow y direct access grants encendidos, implicit flow apagado</td></tr>
-        <tr><td>Redirect URI</td><td><code>https://ignition.&lt;cluster-domain&gt;/*</code></td></tr>
+        <tr><td>Redirect URI</td><td><code>https://ignition.&lt;cluster-domain&gt;/*</code> y <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code></td></tr>
         <tr><td>Gateway</td><td><code>oilgas-gateway</code>, gatewayClassName <code>istio</code>, hostname <code>ignition.&lt;cluster-domain&gt;</code></td></tr>
         <tr><td>Backend</td><td><code>control-room-http.ignition:8088</code></td></tr>
-        <tr><td>AuthPolicy</td><td><code>kuadrant.io/v1</code>, apunta a la HTTPRoute <code>ignition</code>, JWT de <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code> con prefijo <code>Bearer</code></td></tr>
+        <tr><td>OIDCPolicy</td><td><code>oilgas-login</code> (<code>extensions.kuadrant.io/v1alpha1</code>) apunta al Gateway <code>oilgas-gateway</code>. El navegador redirige a <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code> y vuelve a <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>.</td></tr>
       </tbody>
     </table>
     </div>
     <p>
       La Route de OpenShift que el chart de Ignition crearía está deshabilitada
-      (<code>ignition.ingress.enabled=false</code>). El gateway es la única entrada, y un pedido sin un token Bearer
-      válido no llega a la UI del Gateway.
+      (<code>ignition.ingress.enabled=false</code>). El gateway es la única entrada. La OIDCPolicy
+      <code>oilgas-login</code> redirige el navegador a <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code>
+      y el callback es <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>. <code>curl</code> sin esa
+      sesión no devuelve la UI de Ignition.
     </p>
   </section>
 
@@ -600,7 +602,7 @@ oc get externalsecret,pushsecret -A</code></pre>
       <li><code>oilgas-device-ca</code> está Ready, y también el issuer de laboratorio que <code>cert-manager-config</code> creó bajo el nombre <code>letsencrypt-prod</code>.</li>
       <li>Hay un Certificate por sitio: <code>wellpad-north</code>, <code>compressor-station</code>, <code>pipeline-segment</code>.</li>
       <li>El Gateway está <code>Programmed</code>, y la HTTPRoute, la AuthPolicy y la TLSPolicy están aceptadas.</li>
-      <li><code>curl -k https://ignition.&lt;cluster-domain&gt;</code> <em>no</em> devuelve la UI de Ignition sin un token Bearer del realm <code>oilgas</code>. Si la devuelve, la AuthPolicy no está enganchada.</li>
+      <li><code>curl -k -s -o /dev/null -w '%{http_code}' https://ignition.&lt;cluster-domain&gt;</code> imprime <code>302</code> y el <code>Location</code> contiene <code>protocol/openid-connect/auth</code>. El navegador muestra el login de Keycloak del realm <code>oilgas</code>. Si vuelve la UI de Ignition sin login, <code>oilgas-login</code> no está enganchada.</li>
       <li>Los pods de <code>ignition</code> están <code>1/1</code> y existe el Secret <code>control-room-gateway-admin-password</code>.</li>
       <li>Las tres VMs de campo y <code>hmi-kiosk</code> están Running en <code>oilgas-edge</code>.</li>
       <li>En la UI de Ignition, en <strong>Connections &rarr; Devices</strong>, los tres simuladores figuran Running.</li>
@@ -644,10 +646,12 @@ sudo /usr/local/bin/oilgas-bootstrap-edge.sh</code></pre>
 
     <h3>La HMI responde sin token</h3>
     <p>
-      Hay que verificar que la AuthPolicy esté enganchada a la HTTPRoute llamada <code>ignition</code>, y que
-      <code>oidc.issuerURL</code> resuelva. Una AuthPolicy cuyo target no existe queda aceptada pero no aplica nada.
+      Hay que verificar que la OIDCPolicy <code>oilgas-login</code> apunte al Gateway <code>oilgas-gateway</code> y que
+      <code>oidc.issuerURL</code> resuelva. El operador genera las AuthPolicies; si el target no existe, el redirect
+      no se aplica.
     </p>
-    <pre><code>oc describe authpolicy ignition-oidc -n oilgas
+    <pre><code>oc get oidcpolicy oilgas-login -n oilgas
+oc get authpolicy -n oilgas
 curl -sk https://rhbk.&lt;cluster-domain&gt;/realms/oilgas/.well-known/openid-configuration | head</code></pre>
 
     <h3>El pod de Ignition no arranca</h3>
