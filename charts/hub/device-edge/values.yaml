@@ -32,6 +32,11 @@ mockDevice:
 rhelImage:
   # Example placeholder; replace before deploy.
   url: ""
+  secretName: rhel-guest-image
+  vault:
+    secretStore: vault-backend
+    secretStoreKind: ClusterSecretStore
+    remoteKey: secret/data/global/rhel-guest-image
   storageClassName: gp3-csi
   # Generous disk for MicroShift + Ignition data volume.
   size: 80Gi

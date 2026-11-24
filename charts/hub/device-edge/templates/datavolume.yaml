@@ -1,4 +1,12 @@
 {{- $root := . }}
+{{- $imageURL := $root.Values.rhelImage.url }}
+{{- if not $imageURL }}
+{{- $img := lookup "v1" "Secret" $root.Release.Namespace $root.Values.rhelImage.secretName }}
+{{- if and $img $img.data }}
+{{- $imageURL = index $img.data "url" | b64dec }}
+{{- end }}
+{{- end }}
+{{- $imageURL = required "Set rhelImage.url or sync secret rhel-guest-image (values-secret rhel-guest-image/url)" $imageURL }}
 {{- range .Values.sites }}
 ---
 apiVersion: cdi.kubevirt.io/v1beta1
@@ -16,8 +24,7 @@ metadata:
 spec:
   source:
     http:
-      # Set rhelImage.url before sync (Customer Portal or mirror). Empty fails CDI import.
-      url: {{ $root.Values.rhelImage.url | default "https://example.invalid/rhel-9-kvm.qcow2" | quote }}
+      url: {{ $imageURL | quote }}
   pvc:
     accessModes:
       - ReadWriteOnce
@@ -45,7 +52,7 @@ metadata:
 spec:
   source:
     http:
-      url: {{ .Values.rhelImage.url | default "https://example.invalid/rhel-9-kvm.qcow2" | quote }}
+      url: {{ $imageURL | quote }}
   pvc:
     accessModes:
       - ReadWriteOnce
