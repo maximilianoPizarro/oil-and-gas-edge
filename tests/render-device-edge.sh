@@ -11,11 +11,20 @@ if printf '%s\n' "$out" | grep -q 'example.invalid'; then
   echo "placeholder image URL still rendered" >&2
   exit 1
 fi
+if printf '%s\n' "$out" | grep -q 'kind: DataSource'; then
+  echo "explicit image URL must not clone the cluster DataSource" >&2
+  exit 1
+fi
 # Three field VMs, kiosk off.
 test "$(printf '%s\n' "$out" | grep -c 'kind: VirtualMachine')" -eq 3
 printf '%s\n' "$out" | grep -q 'GAN target control-room-gan.ignition.svc.cluster.local:8060'
-if helm template device-edge "$root/charts/hub/device-edge" --set kiosk.enabled=false >/dev/null 2>&1; then
-  echo "empty image URL must fail the render" >&2
+
+empty=$(helm template device-edge "$root/charts/hub/device-edge" --set kiosk.enabled=false)
+printf '%s\n' "$empty" | grep -q 'kind: DataSource'
+printf '%s\n' "$empty" | grep -q 'name: rhel9'
+printf '%s\n' "$empty" | grep -q 'namespace: openshift-virtualization-os-images'
+if printf '%s\n' "$empty" | grep -q '^[[:space:]]*http:'; then
+  echo "empty image URL must clone the DataSource, not import over HTTP" >&2
   exit 1
 fi
 echo "render-device-edge: ok"

@@ -6,7 +6,18 @@
 {{- $imageURL = index $img.data "url" | b64dec }}
 {{- end }}
 {{- end }}
-{{- $imageURL = required "Set rhelImage.url or sync secret rhel-guest-image (values-secret rhel-guest-image/url)" $imageURL }}
+{{- define "device-edge.diskSource" -}}
+{{- if .imageURL -}}
+source:
+  http:
+    url: {{ .imageURL | quote }}
+{{- else -}}
+sourceRef:
+  kind: DataSource
+  name: {{ .dataSource.name }}
+  namespace: {{ .dataSource.namespace }}
+{{- end }}
+{{- end -}}
 {{- range .Values.sites }}
 ---
 apiVersion: cdi.kubevirt.io/v1beta1
@@ -22,9 +33,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  source:
-    http:
-      url: {{ $imageURL | quote }}
+  {{- include "device-edge.diskSource" (dict "imageURL" $imageURL "dataSource" $root.Values.rhelImage.dataSource) | nindent 2 }}
   pvc:
     accessModes:
       - ReadWriteOnce
@@ -50,9 +59,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "2"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  source:
-    http:
-      url: {{ $imageURL | quote }}
+  {{- include "device-edge.diskSource" (dict "imageURL" $imageURL "dataSource" .Values.rhelImage.dataSource) | nindent 2 }}
   pvc:
     accessModes:
       - ReadWriteOnce

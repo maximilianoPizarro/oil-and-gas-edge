@@ -1,0 +1,21 @@
+{{- if .Values.enabled }}
+apiVersion: kiali.io/v1alpha1
+kind: Kiali
+metadata:
+  name: {{ .Values.kiali.name }}
+  namespace: {{ .Values.kiali.namespace }}
+  labels:
+    app.kubernetes.io/name: tracing
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "3"
+    argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
+spec:
+  version: default
+  external_services:
+    tracing:
+      enabled: true
+      provider: tempo
+      internal_url: http://{{ .Values.tempo.service }}:{{ .Values.tempo.queryPort }}
+      use_grpc: false
+{{- end }}

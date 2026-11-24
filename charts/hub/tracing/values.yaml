@@ -1,0 +1,19 @@
+enabled: true
+
+namespace: tempo
+
+tempo:
+  name: oilgas
+  # Service the operator creates: tempo-<name>.<namespace>
+  service: tempo-oilgas.tempo.svc.cluster.local
+  otlpPort: 4317
+  queryPort: 3200
+
+istio:
+  name: default
+  namespace: istio-system
+  providerName: otel-tracing
+
+kiali:
+  name: kiali
+  namespace: istio-system

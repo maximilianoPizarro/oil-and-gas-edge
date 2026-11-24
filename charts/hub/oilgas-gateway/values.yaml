@@ -20,8 +20,15 @@ backend:
 
 oidc:
   enabled: true
+  # Fallback when no Keycloak Route is visible at render time.
+  # A Route named keycloak, or one whose backend Service is keycloak, in
+  # the namespaces below replaces this host.
   issuerURL: ""
+  realm: oilgas
   clientID: ignition-hmi
+  keycloakNamespaces:
+    - rhbk-operator
+    - keycloak
 
 entsog:
   enabled: true

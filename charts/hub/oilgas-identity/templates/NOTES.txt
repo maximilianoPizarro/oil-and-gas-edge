@@ -1,4 +1,11 @@
-Realm {{ .Values.realm.name }} imported into Keycloak {{ .Values.keycloak.name }} ({{ .Values.keycloak.namespace }}).
+Realm {{ .Values.realm.name }} is imported into the Keycloak CR the chart resolved
+(values default {{ .Values.keycloak.name }} in {{ .Values.keycloak.namespace }},
+or keycloak/keycloak when that CR is the one on the cluster).
 
 Client {{ .Values.realm.clientID }} redirects to https://{{ .Values.realm.host }}/.
-Create an operator user in this realm before opening the HMI.
+{{- if .Values.realm.operatorUser.enabled }}
+
+Operator login for realm {{ .Values.realm.name }}:
+  username: {{ .Values.realm.operatorUser.username }}
+  password: secret {{ .Values.realm.operatorUser.secretName }} key password
+{{- end }}

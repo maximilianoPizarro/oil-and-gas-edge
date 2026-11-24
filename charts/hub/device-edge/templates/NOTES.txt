@@ -17,7 +17,10 @@ Programmable Device Simulator.
 Prerequisites:
   1. OpenShift Virtualization already installed (or cnv.enabled true)
   2. Control-room release with shared issuer {{ .Values.controlRoom.ganIssuerName }}
-  3. rhelImage.url set to a RHEL 9 KVM guest image
+  3. rhelImage.url empty (clones DataSource rhel9) or an HTTP RHEL 9 KVM image
+  4. Workers advertise devices.kubevirt.io/kvm, or the HyperConverged
+     operator has KVM_EMULATION=true. OLM owns that Deployment: set the
+     env on the Subscription or the CSV, not with oc set env.
 
 On the control-room Ignition UI, open Config > Networking > Gateway Network
 to see incoming connections from the field sites.

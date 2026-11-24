@@ -1,8 +1,38 @@
+{{- $place := splitList " " (include "oilgas-identity.placement" . | trim) }}
+{{- $kcNs := index $place 0 }}
+{{- $kcName := index $place 1 }}
+{{- $user := .Values.realm.operatorUser }}
+{{- $password := "" }}
+{{- if $user.enabled }}
+{{- $existing := lookup "v1" "Secret" $kcNs $user.secretName }}
+{{- if and $existing $existing.data (index $existing.data "password") }}
+{{- $password = index $existing.data "password" | b64dec }}
+{{- else }}
+{{- $password = randAlphaNum 24 }}
+{{- end }}
+{{- end }}
+{{- if $user.enabled }}
+apiVersion: v1
+kind: Secret
+metadata:
+  name: {{ $user.secretName }}
+  namespace: {{ $kcNs }}
+  labels:
+    app.kubernetes.io/name: oilgas-identity
+    app.kubernetes.io/part-of: oil-and-gas-edge
+  annotations:
+    argocd.argoproj.io/sync-wave: "1"
+type: Opaque
+stringData:
+  username: {{ $user.username | quote }}
+  password: {{ $password | quote }}
+---
+{{- end }}
 apiVersion: k8s.keycloak.org/v2alpha1
 kind: KeycloakRealmImport
 metadata:
   name: {{ .Values.realm.name }}
-  namespace: {{ .Values.keycloak.namespace }}
+  namespace: {{ $kcNs }}
   labels:
     app.kubernetes.io/name: oilgas-identity
     app.kubernetes.io/part-of: oil-and-gas-edge
@@ -10,7 +40,7 @@ metadata:
     argocd.argoproj.io/sync-wave: "1"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
-  keycloakCRName: {{ .Values.keycloak.name }}
+  keycloakCRName: {{ $kcName }}
   realm:
     id: {{ .Values.realm.name }}
     realm: {{ .Values.realm.name }}
@@ -40,3 +70,16 @@ spec:
           - profile
           - email
           - roles
+    {{- if $user.enabled }}
+    users:
+      - username: {{ $user.username }}
+        email: {{ $user.email }}
+        emailVerified: true
+        enabled: true
+        firstName: Field
+        lastName: Operator
+        credentials:
+          - type: password
+            temporary: false
+            value: {{ $password | quote }}
+    {{- end }}

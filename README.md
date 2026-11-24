@@ -15,9 +15,11 @@ Sizing and the test checklist are in [docs/sizing.md](docs/sizing.md).
 ## Architecture
 
 ```text
-operator -> hmi-kiosk (Firefox) -> Connectivity Link Gateway -> Ignition 8.3
-                                 -> RHBK realm oilgas
+operator laptop or hmi-kiosk (Firefox only)
+    -> Connectivity Link Gateway -> Keycloak realm oilgas
+    -> Ignition's own admin login -> Config / Gateway Network
 Ignition control room -- Gateway Network --> MicroShift Ignition Edge (3 sites)
+leak-indicator on Kafka --> (not installed) Ansible Automation Platform job on that field VM
 Programmable Device Simulators --> Kafka topics oilgas.devices.<site>
 Service Mesh -- OpenTelemetry --> Grafana dashboard oil-and-gas-edge
 device CA --> Vault --> External Secrets --> field VM cloud-init
@@ -29,7 +31,11 @@ device CA --> Vault --> External Secrets --> field VM cloud-init
 | `compressor-station` | Midstream compression | suction pressure, discharge pressure, vibration |
 | `pipeline-segment` | Pipeline segment | line pressure, temperature, leak indicator |
 
-The control room registers all three simulators. Each edge gateway registers only its own, with the same name. The kiosk VM (`hmi-kiosk`, 2 vCPU / 4 GiB) does not run Ignition.
+The control room registers all three simulators. Each edge gateway registers only its own, with the same name. The kiosk VM (`hmi-kiosk`, 2 vCPU / 4 GiB) is the operator's Firefox. It does not run Ignition and it does not join the Gateway Network.
+
+Keycloak only opens the public door. The Ignition console that lists Gateway Network connections still asks for its own user `admin` (Secret `control-room-gateway-admin-password`). This pattern does not federate the realm into Ignition.
+
+Ansible Automation Platform is not installed. The extension case is a leak indicator on `oilgas.devices.pipeline-segment`: an Event-Driven Ansible rulebook would run a job on the `pipeline-segment` VM, re-run the guest bootstrap, and disable that device through the in-cluster Ignition API. GitOps keeps owning the hub.
 
 Field VMs default to 4 vCPU / 16 GiB, 80 GiB root and 40 GiB data.
 
@@ -47,6 +53,9 @@ charts/hub/mock-devices/           # Programmable Device Simulator registration
 charts/hub/kafka/                  # single-node KRaft cluster and topics
 charts/hub/device-events/          # publisher for device events
 charts/hub/telemetry/              # Istio Telemetry + Grafana dashboard
+charts/hub/kafka-console/          # Streams console for the oilgas cluster
+charts/hub/mesh-console/           # OpenShift Service Mesh console plugin
+charts/hub/tracing/                # TempoMonolithic, Kiali, mesh trace provider
 charts/hub/device-edge/            # field VMs, MicroShift cloud-init, kiosk
 values-secret.yaml.template
 docs/index.html                    # documentation site, English
@@ -60,13 +69,19 @@ tools/diagrams/                    # source for the figures (node render.mjs)
 
 ## Install
 
-On the virt-capable cluster:
+On the virt-capable cluster. The identity and gateway charts follow the Keycloak CR and its Route at sync time. `values-hub.yaml` is the fallback when that lookup sees nothing. If no node advertises KVM, run `bash scripts/prepare-cluster.sh` before the field VMs sync.
 
 ```bash
 cp values-secret.yaml.template ~/values-secret-oil-and-gas-edge.yaml
-# Set rhel-guest-image.url and, after commissioning, ignition-api.token
+# rhel-guest-image.url is optional (empty clones DataSource rhel9).
+# After commissioning, set ignition-api.token
+# pattern.sh needs podman. Without it, helm-install the charts. Do not
+# also create Argo Applications for releases Helm already owns.
+bash scripts/prepare-cluster.sh
 ./pattern.sh make install
 ```
+
+Realm `oilgas` includes user `operator`. The password is in Secret `oilgas-operator` in the Keycloak namespace. Keycloak only opens the Connectivity Link door. Ignition's Gateway Network console is a second login, user `admin`, password in `control-room-gateway-admin-password`. **Designer → Connections** lists Designer sessions, not the field sites.
 
 Watch the applications:
 
@@ -110,7 +125,7 @@ The lab issuer created by `cert-manager-config` is named `letsencrypt-prod` even
 
 - The Ignition container runs as UID/GID 2003. The control-room chart creates SCC `ignition` and a ClusterRoleBinding.
 - HyperConverged is not applied again. The template already owns OpenShift Virtualization. Set `cnv.enabled` true only on a cluster that does not have it.
-- Kafka is the one operator this pattern subscribes (`amq-streams` in `openshift-operators`).
+- Operators this pattern subscribes, in `openshift-operators`: `amq-streams`, `amq-streams-console`, `kiali-ossm` and `tempo-product`. Drop the last two on a cluster that already runs Kiali and Tempo, and set `tracing.enabled` to false.
 
 ## Uninstall
 

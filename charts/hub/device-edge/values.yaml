@@ -28,10 +28,13 @@ mockDevice:
   apiResource: devices
 
 # RHEL guest image source for DataVolumes.
-# Prefer injecting a real Customer Portal / mirror URL via External Secrets.
+# An empty URL clones the OpenShift Virtualization golden image (DataSource rhel9).
+# A values URL, or the Vault secret below, overrides that with an HTTP import.
 rhelImage:
-  # Example placeholder; replace before deploy.
   url: ""
+  dataSource:
+    name: rhel9
+    namespace: openshift-virtualization-os-images
   secretName: rhel-guest-image
   vault:
     secretStore: vault-backend

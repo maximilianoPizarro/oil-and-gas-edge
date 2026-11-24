@@ -229,7 +229,8 @@
       <a href="https://github.com/maximilianoPizarro/from-3scale-to-connectivity-link">from-3scale-to-connectivity-link</a>.
       Ese catálogo ya instala GitOps, Service Mesh, Connectivity Link, Red Hat build of Keycloak, External
       Secrets, Vault, OpenShift Virtualization, OpenTelemetry, Tempo y Grafana. El patrón no vuelve a instalar
-      ninguno de ellos, y nunca instala Ansible Automation Platform.
+      ninguno de ellos, salvo Tempo y Kiali cuando ese catálogo no los trajo, y nunca instala Ansible
+      Automation Platform.
     </div>
   </section>
 
@@ -255,8 +256,34 @@
     </div>
     <p>
       La sala de control registra los tres simuladores. Cada gateway de borde registra solo el propio, con el
-      mismo nombre, de modo que una ruta de tag resuelve igual se la lea en la sala de control o en el sitio. La
-      VM kiosco (<code>hmi-kiosk</code>, 2 vCPU / 4 GiB) corre Firefox y nada más: no corre Ignition.
+      mismo nombre, de modo que una ruta de tag resuelve igual se la lea en la sala de control o en el sitio.
+    </p>
+
+    <h3>El kiosco</h3>
+    <p>
+      <code>hmi-kiosk</code> (2 vCPU / 4 GiB) es la pantalla del operador, no un cuarto sitio de campo. Firefox abre
+      <code>https://ignition.&lt;dominio-del-clúster&gt;</code> y ahí no corre nada más: ni MicroShift, ni Ignition,
+      ni una sesión de Gateway Network. Las tres VMs de campo marcan hacia la sala de control. El kiosco solo
+      recorre la misma puerta que recorrería una laptop, desde dentro del clúster, para que la demo no dependa de
+      una estación de trabajo que confíe en la CA de laboratorio.
+    </p>
+
+    <h3>Cómo Ansible Automation Platform extendería esto</h3>
+    <p>
+      Este patrón no instala Ansible Automation Platform. GitOps sigue instalando y reconciliando el hub.
+      AAP se sentaría al lado, para acciones de día 2 sobre los guests, y no reemplaza al kiosco.
+    </p>
+    <p>
+      <strong>Caso: un indicador de fuga en el segmento de ducto.</strong> El publicador escribe
+      <code>leak-indicator</code> en <code>oilgas.devices.pipeline-segment</code>. Un rulebook de Event-Driven
+      Ansible, que no está en este repositorio, se suscribe a ese tópico. Cuando el valor deja de ser cero,
+      Automation Controller corre un job template contra el host de inventario <code>pipeline-segment</code>
+      (la VM de campo, usuario <code>cloud-user</code>). El playbook vuelve a ejecutar
+      <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>. Si el indicador sigue alto, una segunda tarea llama
+      a la API de configuración de Ignition en <code>http://control-room-http.ignition.svc:8088</code>, dentro
+      del clúster y no a través de la puerta pública, y deshabilita ese dispositivo. Un job siguiente espera a
+      que cert-manager renueve el certificado del sitio en Vault y reinicia el gateway de borde. Argo CD sigue
+      siendo dueño de los charts.
     </p>
 
     <h3>Namespaces</h3>
@@ -359,7 +386,7 @@ docs/sizing.md</code></pre>
     <div class="callout">
       <strong>Qué significa "conectado".</strong>
       <ol>
-        <li>En el Ignition de sala de control, <strong>Config → Networking → Gateway Network</strong> lista una conexión entrante desde <code>wellpad-north</code> (y los otros sitios cuando sus VMs terminan el bootstrap). Esa fila es el dispositivo MicroShift. No requiere el token de API.</li>
+        <li>En el Ignition de sala de control, <strong>Config → Networking → Gateway Network</strong> lista una conexión entrante desde <code>wellpad-north</code> (y los otros sitios cuando sus VMs terminan el bootstrap). Esa fila es el dispositivo MicroShift. No requiere el token de API. <strong>Designer → Connections</strong> es otra página: lista sesiones del Designer de Ignition y queda vacía hasta que alguien abre el Designer.</li>
         <li><strong>Connections → Devices</strong> en ese gateway de borde muestra el simulador programable de ese sitio. El script del borde lo registra solo después de que exista <code>/etc/oilgas/api-token</code> en el guest. Hay que crear ese token en la UI del Gateway de borde y volver a correr <code>/usr/local/bin/oilgas-bootstrap-edge.sh</code>.</li>
         <li>El Job del hub <code>register-mock-devices</code> registra los mismos tres simuladores en la sala de control. Sigue fallando hasta que Vault <code>ignition-api/token</code> esté cargado. Es una segunda vista de los mismos tags, no un reemplazo de la fila de Gateway Network.</li>
       </ol>
@@ -445,16 +472,18 @@ oc get externalsecret -n oilgas-edge</code></pre>
         <tr><td>Redirect URI</td><td><code>https://ignition.&lt;cluster-domain&gt;/*</code> y <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code></td></tr>
         <tr><td>Gateway</td><td><code>oilgas-gateway</code>, gatewayClassName <code>istio</code>, hostname <code>ignition.&lt;cluster-domain&gt;</code></td></tr>
         <tr><td>Backend</td><td><code>control-room-http.ignition:8088</code></td></tr>
-        <tr><td>OIDCPolicy</td><td><code>oilgas-login</code> (<code>extensions.kuadrant.io/v1alpha1</code>) apunta al Gateway <code>oilgas-gateway</code>. El navegador redirige a <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code> y vuelve a <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>.</td></tr>
+        <tr><td>OIDCPolicy</td><td><code>oilgas-login</code> (<code>extensions.kuadrant.io/v1alpha1</code>) apunta a la HTTPRoute <code>ignition</code>. El navegador redirige al realm y vuelve a <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>. No debe apuntar al Gateway: eso mezcla el chequeo de la cookie jwt en el callback y el navegador entra en bucle.</td></tr>
       </tbody>
     </table>
     </div>
     <p>
       La Route de OpenShift que el chart de Ignition crearía está deshabilitada
       (<code>ignition.ingress.enabled=false</code>). El gateway es la única entrada. La OIDCPolicy
-      <code>oilgas-login</code> redirige el navegador a <code>https://rhbk.&lt;cluster-domain&gt;/realms/oilgas</code>
-      y el callback es <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>. <code>curl</code> sin esa
-      sesión no devuelve la UI de Ignition.
+      <code>oilgas-login</code> redirige el navegador a <code>oidc.issuerURL</code>
+      y el callback es <code>https://ignition.&lt;cluster-domain&gt;/auth/callback</code>. Ese host es la Route de
+      Keycloak, no un nombre supuesto. <code>curl</code> sin esa
+      sesión no devuelve la UI de Ignition. El import del realm incluye el usuario <code>operator</code>.
+      Su contraseña está en el Secret <code>oilgas-operator</code> del namespace de Keycloak.
       <code>/entsog</code> es ENTSOG Transparency (<code>transparency.entsog.eu</code>): flujos y nominaciones de gas,
       sin clave upstream, y la misma OIDCPolicy que Ignition.
     </p>
@@ -503,9 +532,11 @@ oc get externalsecret -n oilgas-edge</code></pre>
       instancia de Grafana que el template del clúster ya ejecuta
       (<code>openshift-cluster-observability-operator</code>, selector de instancia
       <code>dashboards: grafana-observability</code>). No se instala un segundo Grafana.
-      Kiali es el Kiali del template, mostrado dentro de la consola de OpenShift por el <code>OSSMConsole</code> <code>ossmconsole</code>.
-      Las trazas son los spans del mesh de los namespaces <code>ignition</code> y <code>oilgas</code>, guardados en el Tempo del template.
-      Este patrón no instala ninguno de los dos operadores.
+      La consola de OpenShift muestra Kiali a través del <code>OSSMConsole</code> <code>ossmconsole</code>.
+      El chart <code>tracing</code> instala Tempo (<code>TempoMonolithic</code> <code>oilgas</code>) y un CR <code>Kiali</code>,
+      y apunta el proveedor del mesh <code>otel-tracing</code> a <code>tempo-oilgas.tempo.svc.cluster.local:4317</code>.
+      Los spans son el tráfico del mesh en los namespaces <code>ignition</code> y <code>oilgas</code>, muestreados al 1 por ciento.
+      En un clúster que ya ejecuta Tempo, poner <code>tracing.enabled</code> en false y apuntar <code>telemetry</code> a ese proveedor.
     </p>
     <pre><code>oc run kafka-consume -n oilgas --rm -it --restart=Never \
   --image=quay.io/strimzi/kafka:0.45.0 -- \
@@ -561,11 +592,40 @@ oc get clustersecretstore</code></pre>
       distinto, hay que sobreescribirlo en <code>device-certs</code> y <code>mock-devices</code>.
     </p>
 
+    <h3>Revisar el clúster antes de instalar</h3>
+    <p>
+      <code>oilgas-identity</code> importa el realm en el CR de Keycloak de sus values
+      (<code>rhbk</code> en <code>rhbk-operator</code>). Si ese CR no está y existe <code>keycloak/keycloak</code>,
+      el chart usa ese. <code>oilgas-gateway</code> lee una Route llamada <code>keycloak</code>, o una cuyo
+      Service es <code>keycloak</code>, en esos namespaces y usa ese host como <code>oidc.issuerURL</code>.
+      El valor de <code>values-hub.yaml</code> es solo el respaldo cuando el render no ve una Route. Un host
+      sin Route devuelve la página de OpenShift "Application is not available".
+    </p>
+    <p>
+      El import del realm incluye el usuario <code>operator</code>. La contraseña se genera en el primer sync
+      y queda en el Secret <code>oilgas-operator</code> del namespace de Keycloak. No es un usuario de Ignition.
+    </p>
+    <p>Los workers sin <code>/dev/kvm</code> no arrancan las VMs de campo. Las formas AWS <code>m5</code> y <code>m6</code> que no son <code>.metal</code> informan cero. Hay que correr esto antes de sincronizar <code>device-edge</code>. Si algún nodo ya anuncia KVM, no cambia nada.</p>
+    <pre><code>bash scripts/prepare-cluster.sh</code></pre>
+    <p>
+      El script pone <code>KVM_EMULATION=true</code> en el CSV de HyperConverged. OLM es dueño de ese Deployment,
+      así que <code>oc set env</code> sobre el Deployment se revierte. Después
+      <code>oc get kubevirt -n openshift-cnv -o jsonpath='{.items[0].spec.configuration.developerConfiguration.useEmulation}'</code>
+      imprime <code>true</code>. Los launchers creados antes siguen pidiendo
+      <code>devices.kubevirt.io/kvm</code>; hay que borrar esos pods para que se recreen. La emulación bootea lento,
+      y las VMs quedan en <code>Provisioning</code> mientras CDI clona el DataSource <code>rhel9</code>.
+    </p>
+    <p>
+      <code>./pattern.sh</code> necesita podman. En una máquina sin podman, los mismos charts se instalan con Helm
+      en los namespaces de la tabla de arriba. No hace falta crear Applications de Argo para releases que Helm ya posee.
+    </p>
+
     <pre><code>git clone https://github.com/maximilianoPizarro/oil-and-gas-edge.git
 cd oil-and-gas-edge
 cp values-secret.yaml.template ~/values-secret-oil-and-gas-edge.yaml
 
-# Completar rhel-guest-image.url ahora, e ignition-api.token después del commissioning
+# rhel-guest-image.url es opcional. Vacío clona el DataSource rhel9 del clúster.
+# Guardar ignition-api.token después de comisionar el Gateway de sala de control.
 ./pattern.sh make install</code></pre>
 
     <h3>Secretos</h3>
@@ -575,7 +635,7 @@ cp values-secret.yaml.template ~/values-secret-oil-and-gas-edge.yaml
       <tbody>
         <tr><td><code>ignition-admin</code></td><td><code>gateway-admin-password</code></td><td>generate</td><td>Login de admin del Gateway de sala de control</td></tr>
         <tr><td><code>ignition-api</code></td><td><code>token</code></td><td>prompt</td><td>Registro de simuladores contra la API de configuración</td></tr>
-        <tr><td><code>rhel-guest-image</code></td><td><code>url</code></td><td>prompt</td><td>Origen del DataVolume de las VMs de campo</td></tr>
+        <tr><td><code>rhel-guest-image</code></td><td><code>url</code></td><td>prompt</td><td>Disco HTTP opcional. Vacío usa el DataSource <code>rhel9</code></td></tr>
         <tr><td><code>keycloak-initial-admin</code></td><td><code>username</code>, <code>password</code></td><td>generate</td><td>Solo si se descomenta la aplicación <code>rhbk-cert</code></td></tr>
         <tr><td><code>keycloak-db-secret</code></td><td><code>username</code>, <code>password</code></td><td>generate</td><td>Solo si se descomenta la aplicación <code>rhbk-cert</code></td></tr>
       </tbody>
@@ -586,6 +646,14 @@ cp values-secret.yaml.template ~/values-secret-oil-and-gas-edge.yaml
       instala, se espera a que levante la sala de control, se crea el token en el Gateway, se guarda en Vault bajo
       <code>ignition-api/token</code>, y el Job <code>register-mock-devices</code> va a tener éxito en alguno de sus
       reintentos: el <code>backoffLimit</code> es 30, así que espera.
+    </div>
+    <div class="callout">
+      <strong>Dos logins, en este orden.</strong> El usuario <code>operator</code> del realm <code>oilgas</code>
+      de Keycloak solo hace pasar el navegador por el gateway de Connectivity Link. La contraseña está en el
+      Secret <code>oilgas-operator</code>. Después Ignition muestra su propio login. La
+      consola donde <strong>Config → Networking → Gateway Network</strong> lista las conexiones de campo es ese
+      segundo login: usuario <code>admin</code>, contraseña en el Secret de abajo. El usuario de Keycloak no es
+      un usuario de Ignition, y este patrón no federa el realm dentro de Ignition.
     </div>
 
     <h3>Abrir la HMI</h3>
@@ -661,13 +729,46 @@ sudo /usr/local/bin/oilgas-bootstrap-edge.sh</code></pre>
 
     <h3>La HMI responde sin token</h3>
     <p>
-      Hay que verificar que la OIDCPolicy <code>oilgas-login</code> apunte al Gateway <code>oilgas-gateway</code> y que
+      Hay que verificar que la OIDCPolicy <code>oilgas-login</code> apunte a la HTTPRoute <code>ignition</code> y que
       <code>oidc.issuerURL</code> resuelva. El operador genera las AuthPolicies; si el target no existe, el redirect
-      no se aplica.
+      no se aplica. Si el navegador se queda en <code>/auth/callback</code> con
+      <code>ERR_TOO_MANY_REDIRECTS</code>, la política está pegada al Gateway y el callback pide la cookie jwt
+      antes de canjear el código.
     </p>
     <pre><code>oc get oidcpolicy oilgas-login -n oilgas
 oc get authpolicy -n oilgas
-curl -sk https://rhbk.&lt;cluster-domain&gt;/realms/oilgas/.well-known/openid-configuration | head</code></pre>
+curl -sk https://&lt;host-de-la-route-de-keycloak&gt;/realms/oilgas/.well-known/openid-configuration | head</code></pre>
+
+    <h3>El login dice Application is not available</h3>
+    <p>
+      El navegador llegó a un hostname sin Route. <code>oidc.issuerURL</code> no coincide con la Route de Keycloak
+      del chequeo de arriba. En un sandbox la Route suele ser <code>sso.&lt;cluster-domain&gt;</code> y
+      <code>rhbk.&lt;cluster-domain&gt;</code> queda vacío. Hay que actualizar el issuer, incluidos
+      <code>/protocol/openid-connect/auth</code> y <code>/protocol/openid-connect/token</code>, y reconciliar
+      <code>oilgas-gateway</code>. Un <code>helm upgrade --reuse-values</code> no toma los defaults nuevos del chart.
+    </p>
+
+    <h3>La lista de VirtualMachine está vacía</h3>
+    <p>
+      <code>device-edge</code> es la aplicación que crea <code>wellpad-north</code>,
+      <code>compressor-station</code>, <code>pipeline-segment</code> y <code>hmi-kiosk</code> en
+      <code>oilgas-edge</code>. Hasta que se instala, la consola en
+      <code>kubevirt.io~v1~VirtualMachine</code> está vacía. Un <code>rhel-guest-image.url</code> vacío clona el
+      DataSource <code>rhel9</code>. No hay que commitear una URL cargada.
+    </p>
+    <p>
+      Si las cuatro VMs existen y quedan en <code>ErrorUnschedulable</code> con
+      <code>Insufficient devices.kubevirt.io/kvm</code>, los workers no tienen KVM. Hay que encender
+      <code>KVM_EMULATION</code> como dice Instalación y después borrar los pods virt-launcher que quedaron Pending.
+    </p>
+
+    <h3>Designer Connections no muestra sesiones</h3>
+    <p>
+      Esa página lista a quien usa el Designer de Ignition. Los sitios de campo están en
+      <strong>Config → Networking → Gateway Network</strong>, y esas filas aparecen recién cuando el guest
+      termina <code>oilgas-bootstrap-edge.sh</code>. Con emulación ese arranque tarda. La barra de trial es otra
+      cosa: <strong>Reset Trial</strong> suma dos horas y no crea conexiones.
+    </p>
 
     <h3>El pod de Ignition no arranca</h3>
     <p>
@@ -763,16 +864,17 @@ topics:
 
     <h3>¿La VM kiosco corre Ignition?</h3>
     <p>
-      No. <code>hmi-kiosk</code> corre Firefox apuntando a la URL del gateway. Existe para poder demostrar el camino
-      del operador desde dentro del clúster, sin necesidad de una estación de trabajo que confíe en la CA de
-      laboratorio.
+      No. Es el Firefox del operador, apuntando a la URL del gateway, para mostrar la demo desde dentro del
+      clúster. No se une a Gateway Network y no registra un dispositivo. Ver
+      <a href="#architecture">El kiosco</a>.
     </p>
 
     <h3>¿Participa Ansible Automation Platform?</h3>
     <p>
-      No. GitOps reemplaza el push de unidades Podman que usaba
-      <a href="https://github.com/maximilianoPizarro/hmi-demo">hmi-demo</a>. Podman queda en el guest solo como
-      herramienta de imágenes.
+      No en la instalación. GitOps reemplaza el push de unidades Podman que usaba
+      <a href="https://github.com/maximilianoPizarro/hmi-demo">hmi-demo</a>. El caso del indicador de fuga en
+      <a href="#architecture">Cómo Ansible Automation Platform extendería esto</a> es la forma de día 2, y este
+      patrón no la despliega.
     </p>
   </section>
 

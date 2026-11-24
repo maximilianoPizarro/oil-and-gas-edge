@@ -1,0 +1,14 @@
+apiVersion: v2
+name: tracing
+description: >-
+  Tempo and Kiali for the oil and gas mesh. Installs a TempoMonolithic and a
+  Kiali CR, and points the existing Istio mesh at the provider otel-tracing.
+  Disable the chart on a cluster that already runs Tempo.
+type: application
+version: 0.1.0
+appVersion: "2.10.8"
+keywords:
+  - tempo
+  - kiali
+  - tracing
+  - oil-and-gas

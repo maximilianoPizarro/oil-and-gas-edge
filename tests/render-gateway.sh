@@ -8,6 +8,13 @@ out=$(helm template oilgas-gateway "$root/charts/hub/oilgas-gateway" \
 printf '%s\n' "$out" | grep -q 'kind: OIDCPolicy'
 printf '%s\n' "$out" | grep -q 'name: oilgas-login'
 printf '%s\n' "$out" | grep -q 'kind: Gateway'
+policy=$(printf '%s\n' "$out" | awk '/kind: OIDCPolicy/,/^---$/')
+printf '%s\n' "$policy" | grep -q 'kind: HTTPRoute'
+printf '%s\n' "$policy" | grep -q 'name: ignition'
+if printf '%s\n' "$policy" | grep -q 'kind: Gateway'; then
+  echo "OIDCPolicy must not target the Gateway" >&2
+  exit 1
+fi
 printf '%s\n' "$out" | grep -q '/protocol/openid-connect/auth'
 printf '%s\n' "$out" | grep -q 'https://ignition.apps.example.com/auth/callback'
 # The JWT AuthPolicy must be gone. A generated one is owned by the operator, not by this chart.

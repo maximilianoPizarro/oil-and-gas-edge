@@ -6,6 +6,7 @@ clusterGroup:
     ignition: {}
     oilgas: {}
     oilgas-edge: {}
+    tempo: {}
     # The Field Content template already owns cert-manager, RHBK (rhbk-operator),
     # Service Mesh, Connectivity Link, External Secrets, Vault, CNV and Grafana.
     # Do not add OperatorGroups for those namespaces.
@@ -23,6 +24,23 @@ clusterGroup:
       installPlanApproval: Automatic
     amq-streams-console:
       name: amq-streams-console
+      namespace: openshift-operators
+      channel: stable
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      installPlanApproval: Automatic
+    # The Field Content template on this sandbox did not install Kiali or Tempo.
+    # Drop these two subscriptions on a cluster that already runs them, and set
+    # the tracing application override enabled=false.
+    kiali-ossm:
+      name: kiali-ossm
+      namespace: openshift-operators
+      channel: stable
+      source: redhat-operators
+      sourceNamespace: openshift-marketplace
+      installPlanApproval: Automatic
+    tempo-product:
+      name: tempo-product
       namespace: openshift-operators
       channel: stable
       source: redhat-operators
@@ -90,6 +108,10 @@ clusterGroup:
       path: charts/hub/oilgas-identity
       syncWave: "6"
       overrides:
+        # Must name the Keycloak CR that is actually installed.
+        # oc get keycloak -A
+        # A Field Content hub is often rhbk in rhbk-operator. A sandbox may
+        # be keycloak in the keycloak namespace. A wrong pair never imports the realm.
         - name: keycloak.name
           value: rhbk
         - name: keycloak.namespace
@@ -113,6 +135,9 @@ clusterGroup:
       overrides:
         - name: gateway.hostname
           value: 'ignition.{{ .Values.global.localClusterDomain }}'
+        # Fallback only. oilgas-gateway replaces this host when it finds a
+        # Route named keycloak, or a Route whose Service is keycloak, in
+        # rhbk-operator or the keycloak namespace.
         - name: oidc.issuerURL
           value: 'https://rhbk.{{ .Values.global.localClusterDomain }}/realms/oilgas'
         - name: tlsPolicy.issuerRef.name
@@ -192,6 +217,13 @@ clusterGroup:
       argoProject: oilgas
       path: charts/hub/mesh-console
       syncWave: "18"
+
+    tracing:
+      name: tracing
+      namespace: tempo
+      argoProject: oilgas
+      path: charts/hub/tracing
+      syncWave: "19"
 
     device-edge:
       name: device-edge

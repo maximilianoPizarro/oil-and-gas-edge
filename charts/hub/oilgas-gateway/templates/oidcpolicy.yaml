@@ -1,4 +1,5 @@
 {{- if .Values.oidc.enabled }}
+{{- $issuer := include "oilgas-gateway.issuer" . | trim }}
 apiVersion: extensions.kuadrant.io/v1alpha1
 kind: OIDCPolicy
 metadata:
@@ -11,14 +12,18 @@ metadata:
     argocd.argoproj.io/sync-wave: "4"
     argocd.argoproj.io/sync-options: SkipDryRunOnMissingResource=true
 spec:
+  # Target the Ignition HTTPRoute, not the Gateway. A Gateway target merges
+  # the jwt cookie check into /auth/callback, the code is never exchanged,
+  # and the browser loops on that URL. The route's "/" predicate still covers
+  # /entsog; the operator's callback route stays ahead of it.
   targetRef:
     group: gateway.networking.k8s.io
-    kind: Gateway
-    name: {{ .Values.gateway.name }}
+    kind: HTTPRoute
+    name: ignition
   provider:
-    issuerURL: {{ .Values.oidc.issuerURL | quote }}
+    issuerURL: {{ $issuer | quote }}
     clientID: {{ .Values.oidc.clientID | quote }}
     redirectURI: https://{{ .Values.gateway.hostname }}/auth/callback
-    authorizationEndpoint: {{ printf "%s/protocol/openid-connect/auth" .Values.oidc.issuerURL | quote }}
-    tokenEndpoint: {{ printf "%s/protocol/openid-connect/token" .Values.oidc.issuerURL | quote }}
+    authorizationEndpoint: {{ printf "%s/protocol/openid-connect/auth" $issuer | quote }}
+    tokenEndpoint: {{ printf "%s/protocol/openid-connect/token" $issuer | quote }}
 {{- end }}

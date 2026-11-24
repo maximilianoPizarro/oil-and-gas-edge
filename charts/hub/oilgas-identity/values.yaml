@@ -1,5 +1,6 @@
 keycloak:
-  # Field Content template Keycloak CR.
+  # Field Content default. If this CR is missing and keycloak/keycloak
+  # exists, the chart uses that one.
   name: rhbk
   namespace: rhbk-operator
 
@@ -9,3 +10,10 @@ realm:
   # Public hostname of the HMI, without scheme. Used for redirect URIs.
   host: ignition.apps.cluster.example.com
   clientID: ignition-hmi
+  # One non-temporary user so the realm login accepts someone.
+  # The password is generated on first render and reused from the Secret.
+  operatorUser:
+    enabled: true
+    username: operator
+    email: operator@oilgas.local
+    secretName: oilgas-operator
